@@ -12,14 +12,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import itertools
 
-#Network Architecture
-num_inputs = 28*28
+# Network Architecture
+num_inputs = 28 * 28
 num_hidden = 1000
 num_outputs = 10
 
 # Temporal Dynamics
 num_steps = 25
 beta = 0.95
+
 
 # Define Network
 class Net(nn.Module):

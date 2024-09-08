@@ -4,7 +4,7 @@ from data import get_data_loaders
 from train import train_model
 
 # params
-num_inputs = 28*28
+num_inputs = 28 * 28
 num_hidden = 1000
 num_outputs = 10
 
@@ -28,7 +28,9 @@ else:
 
 net = Net().to(device)
 
-loss_hist, test_loss_hist = train_model(net, train_loader, test_loader, device, num_steps, num_epochs, batch_size, dtype)
+loss_hist, test_loss_hist = train_model(
+    net, train_loader, test_loader, device, num_steps, num_epochs, batch_size, dtype
+)
 
 # Plot Loss
 import matplotlib.pyplot as plt
