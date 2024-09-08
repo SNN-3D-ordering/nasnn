@@ -13,7 +13,12 @@ with open("config.yaml", "r") as file:
 model_params = config["model"]
 training_params = config["training"]
 
-# Set device
+# Initialize data loaders
+train_loader, test_loader = get_data_loaders(
+    training_params["batch_size"], training_params["data_path"]
+)
+
+# Initialize model
 if torch.cuda.is_available():
     device = torch.device("cuda")
 elif torch.backends.mps.is_available():
@@ -21,12 +26,6 @@ elif torch.backends.mps.is_available():
 else:
     device = torch.device("cpu")
 
-# Initialize data loaders
-train_loader, test_loader = get_data_loaders(
-    training_params["batch_size"], training_params["data_path"]
-)
-
-# Initialize model
 net = Net(
     model_params["num_inputs"],
     model_params["num_hidden"],

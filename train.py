@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
-import numpy as np
-from utils import print_batch_accuracy, train_printer
+from utils import train_printer
 
 
 def train_model(

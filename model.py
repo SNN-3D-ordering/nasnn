@@ -1,19 +1,8 @@
-# imports
 import snntorch as snn
-from snntorch import spikeplot as splt
-from snntorch import spikegen
-
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
-
-import matplotlib.pyplot as plt
-import numpy as np
-import itertools
 
 
-# Define Network
 class Net(nn.Module):
     def __init__(self, num_inputs, num_hidden, num_outputs, num_steps, beta):
         super().__init__()
@@ -34,7 +23,7 @@ class Net(nn.Module):
         spk2_rec = []
         mem2_rec = []
 
-        for step in range(self.num_steps):
+        for _ in range(self.num_steps):
             cur1 = self.fc1(x)
             spk1, mem1 = self.lif1(cur1, mem1)
             cur2 = self.fc2(spk1)
