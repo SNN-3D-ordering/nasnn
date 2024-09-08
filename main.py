@@ -3,6 +3,7 @@ import yaml
 from model import Net
 from data import get_data_loaders
 from train import train_model
+from test import test
 import matplotlib.pyplot as plt
 
 # Load configuration
@@ -54,18 +55,5 @@ plt.title("Loss Curves")
 plt.legend(["Train Loss", "Test Loss"])
 plt.show()
 
-# Test accuracy over all 10,000 samples
-total = 0
-correct = 0
-
-with torch.no_grad():
-    net.eval()
-    for data, targets in test_loader:
-        data = data.to(device)
-        targets = targets.to(device)
-
-        test_spk, _ = net(data.view(data.size(0), -1))
-
-        _, predicted = test_spk.sum(dim=0).max(1)
-        total += targets.size(0)
-        correct += (predicted == targets).sum().item()
+total, correct = test(net, test_loader, device)
+print(f"Accuracy: {correct/total*100:.2f}%")
