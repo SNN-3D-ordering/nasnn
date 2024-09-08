@@ -1,24 +1,18 @@
 import torch
+import yaml
 from model import Net
 from data import get_data_loaders
 from train import train_model
+import matplotlib.pyplot as plt
 
-# params
-num_inputs = 28 * 28
-num_hidden = 1000
-num_outputs = 10
+# Load configuration
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
-num_steps = 25
-beta = 0.95
+model_params = config["model"]
+training_params = config["training"]
 
-batch_size = 128
-data_path = "/tmp/data/mnist"
-dtype = torch.float
-
-num_epochs = 1
-
-train_loader, test_loader = get_data_loaders(batch_size, data_path)
-
+# Set device
 if torch.cuda.is_available():
     device = torch.device("cuda")
 elif torch.backends.mps.is_available():
@@ -26,22 +20,38 @@ elif torch.backends.mps.is_available():
 else:
     device = torch.device("cpu")
 
-net = Net().to(device)
-
-loss_hist, test_loss_hist = train_model(
-    net, train_loader, test_loader, device, num_steps, num_epochs, batch_size, dtype
+# Initialize data loaders
+train_loader, test_loader = get_data_loaders(
+    training_params["batch_size"], training_params["data_path"]
 )
 
-# Plot Loss
-import matplotlib.pyplot as plt
+# Initialize model
+net = Net(
+    model_params["num_inputs"],
+    model_params["num_hidden"],
+    model_params["num_outputs"],
+    model_params["num_steps"],
+    model_params["beta"],
+).to(device)
 
+# Train model
+loss_hist, test_loss_hist = train_model(
+    net,
+    train_loader,
+    test_loader,
+    device,
+    model_params["num_steps"],
+    training_params["num_epochs"],
+    training_params["batch_size"],
+    torch.float,
+)
+
+# Plot the loss curves
 fig = plt.figure(facecolor="w", figsize=(10, 5))
 plt.plot(loss_hist)
 plt.plot(test_loss_hist)
 plt.title("Loss Curves")
 plt.legend(["Train Loss", "Test Loss"])
-plt.xlabel("Iteration")
-plt.ylabel("Loss")
 plt.show()
 
 # Test accuracy over all 10,000 samples
