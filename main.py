@@ -19,12 +19,15 @@ train_loader, test_loader = get_data_loaders(
 )
 
 # Initialize model
-if torch.cuda.is_available():
-    device = torch.device("cuda")
-elif torch.backends.mps.is_available():
-    device = torch.device("mps")
-else:
-    device = torch.device("cpu")
+# if torch.cuda.is_available():
+#    device = torch.device("cuda")
+# elif torch.backends.mps.is_available():
+#    device = torch.device("mps")
+# else:
+#    device = torch.device("cpu")
+
+# Use CPU for now (this is because the indices and tensors are not on the same device)
+device = torch.device("cpu")
 
 net = Net(
     model_params["num_inputs"],
