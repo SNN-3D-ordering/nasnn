@@ -3,7 +3,10 @@ import torch.nn as nn
 import numpy as np
 from utils import print_batch_accuracy, train_printer
 
-def train_model(net, train_loader, test_loader, device, num_steps, num_epochs, batch_size, dtype):
+
+def train_model(
+    net, train_loader, test_loader, device, num_steps, num_epochs, batch_size, dtype
+):
     loss = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(net.parameters(), lr=5e-4, betas=(0.9, 0.999))
 
@@ -46,7 +49,18 @@ def train_model(net, train_loader, test_loader, device, num_steps, num_epochs, b
                 test_loss_hist.append(test_loss.item())
 
                 if counter % 50 == 0:
-                    train_printer(epoch, iter_counter, loss_hist, test_loss_hist, data, targets, test_data, test_targets, net, batch_size)
+                    train_printer(
+                        epoch,
+                        iter_counter,
+                        loss_hist,
+                        test_loss_hist,
+                        data,
+                        targets,
+                        test_data,
+                        test_targets,
+                        net,
+                        batch_size,
+                    )
                 counter += 1
                 iter_counter += 1
 
