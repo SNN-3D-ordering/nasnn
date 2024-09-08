@@ -1,6 +1,7 @@
 import snntorch as snn
 import torch
 import torch.nn as nn
+from custom_neurons import CustomLeaky
 
 
 class Net(nn.Module):
@@ -9,9 +10,9 @@ class Net(nn.Module):
         self.num_steps = num_steps
 
         self.fc1 = nn.Linear(num_inputs, num_hidden)
-        self.lif1 = snn.Leaky(beta=beta)
+        self.lif1 = CustomLeaky(beta=beta)
         self.fc2 = nn.Linear(num_hidden, num_outputs)
-        self.lif2 = snn.Leaky(beta=beta)
+        self.lif2 = CustomLeaky(beta=beta)
 
     def forward(self, x):
 
