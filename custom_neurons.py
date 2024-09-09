@@ -30,7 +30,7 @@ class CustomLeaky(snn.Leaky):
         )
 
     def cluster_neurons_simple(self, spk):
-        # TODO extend, this is only k-means for now (plus doesnt work)
+        # TODO extend, this will only move about the neurons a bit, but should be fine to test whether anything happens at all
 
         # get indices of neurons that fired
         fired_indices = torch.nonzero(spk, as_tuple=True)
@@ -40,29 +40,15 @@ class CustomLeaky(snn.Leaky):
         if len(fired_indices[0]) == 0:
             return  # skip clustering
 
-        # get neuron indices (assuming spk has shape [batch_size, num_neurons]), then coordinates
-        neuron_indices = fired_indices[1]
-        fired_coordinates = self.coordinates[neuron_indices]
+        fired_coordinates = self.coordinates[fired_indices[1]]
 
-        # assess nr of unique points to avoid k-means error
-        unique_fired_coordinates = np.unique(fired_coordinates.cpu().numpy(), axis=0)
-        num_unique_points = len(unique_fired_coordinates)
+        # move all neurons away from the center a bit
+        center = torch.mean(fired_coordinates, dim=0)
+        self.coordinates += 0.01 * (self.coordinates - center)
 
-        # k-means clustering on fired neurons
-        n_clusters = min(
-            5, num_unique_points
-        )  # Ensure n_clusters <= number of unique points
-        if (
-            n_clusters > 1
-        ):  # Only perform clustering if there is more than one unique point
-            kmeans = KMeans(n_clusters=n_clusters)
-            kmeans.fit(fired_coordinates)
-
-            # update coordinates of fired neurons
-            for i, idx in enumerate(neuron_indices):
-                self.coordinates[idx] = torch.tensor(
-                    kmeans.cluster_centers_[kmeans.labels_[i]]
-                )
+        # move all neurons that fired closer to each other
+        center = torch.mean(fired_coordinates, dim=0)
+        self.coordinates[fired_indices[1]] += 0.01 * (fired_coordinates - center)
 
     def cluster_neurons_batchwise(self, spk):
         # 0. move all neuron coordinates outward from the center
@@ -107,8 +93,18 @@ class CustomLeaky(snn.Leaky):
 
     def cluster_neurons_stepwise(self, spk):
         # 1. remove any neurons that did not fire
-        # 2. go stepwise (for batch_size steps) over the neurons that fired, each time, do one step of k-means
-        pass
+        # 2. go stepwise (for batch_size steps) over the neurons that fired, each time, do one step of cluster_neurons_simple
+        # 3. repeat for the next batch_size neurons that fired
+
+        # remove any neurons that did not fire (TODO: check if this is necessary)
+        fired_indices = torch.nonzero(spk, as_tuple=True)[1]
+        if len(fired_indices) == 0:
+            return
+        
+        # go stepwise (for len(fired_indices) steps) over the neurons that fired, each time, do one step of cluster_neurons_simple
+        for i in range(len(fired_indices)):
+            self.cluster_neurons_simple(spk[:, fired_indices[i]])
+
 
     def export_positions_history(self, file_path):
         # convert NumPy arrays to lists for JSON serialization
@@ -132,5 +128,5 @@ class CustomLeaky(snn.Leaky):
             # eval mode behavior (custom clustering)
             current_step = input.shape[0]  # TODO this is wrong (always 128)
             self.update_firing_times(spk, current_step)
-            # self.cluster_neurons_kmeans(spk) TODO add something in here
+            self.cluster_neurons_simple(spk)
         return spk, mem
