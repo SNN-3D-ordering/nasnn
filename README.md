@@ -11,3 +11,19 @@ To install and run this project, follow these steps:
     ```
 3. Activate the newly created environment.
 
+
+## Usage
+Current usage instructions (subject to change)
+
+1. Run the following command to train a model
+    ```
+    python main.py --train
+    ```
+2. Run the following command to test the model and do the clustering
+    ```
+    python main.py --eval
+    ```
+
+Use both flags to do both in the same run.
+
+
