@@ -2,7 +2,8 @@ import snntorch as snn
 import torch
 import numpy as np
 from sklearn.cluster import KMeans
-import json 
+import json
+
 
 class CustomLeaky(snn.Leaky):
     def __init__(self, beta, input_size):
@@ -24,7 +25,9 @@ class CustomLeaky(snn.Leaky):
         # update firing times based on current timestep
         self.firing_times[spk.any(dim=0)] = current_step
         # store all positions at current timestep for later export
-        self.positions_history[current_step] = self.coordinates.clone().detach().cpu().numpy()
+        self.positions_history[current_step] = (
+            self.coordinates.clone().detach().cpu().numpy()
+        )
 
     def cluster_neurons(self, spk):
         # TODO extend, this is only k-means for now
@@ -32,37 +35,53 @@ class CustomLeaky(snn.Leaky):
         fired_indices = torch.nonzero(spk, as_tuple=True)
         if len(fired_indices[0]) == 0:
             return  # skip clustering
-    
+
         # get neuron indices (assuming spk has shape [batch_size, num_neurons]), then coordinates
         neuron_indices = fired_indices[1]
         fired_coordinates = self.coordinates[neuron_indices]
-    
+
         # assess nr of unique points to avoid k-means error
         unique_fired_coordinates = np.unique(fired_coordinates.cpu().numpy(), axis=0)
         num_unique_points = len(unique_fired_coordinates)
-    
+
         # k-means clustering on fired neurons
-        n_clusters = min(5, num_unique_points)  # Ensure n_clusters <= number of unique points
-        if n_clusters > 1:  # Only perform clustering if there is more than one unique point
+        n_clusters = min(
+            5, num_unique_points
+        )  # Ensure n_clusters <= number of unique points
+        if (
+            n_clusters > 1
+        ):  # Only perform clustering if there is more than one unique point
             kmeans = KMeans(n_clusters=n_clusters)
             kmeans.fit(fired_coordinates)
-    
+
             # update coordinates of fired neurons
             for i, idx in enumerate(neuron_indices):
                 self.coordinates[idx] = torch.tensor(
                     kmeans.cluster_centers_[kmeans.labels_[i]]
                 )
 
-    def forward(self, input, mem, current_step):
-        spk, mem = super().forward(input, mem)
-        self.update_firing_times(spk, current_step)
-        self.cluster_neurons(spk)
-        return spk, mem
-
     def export_positions_history(self, file_path):
         # convert NumPy arrays to lists for JSON serialization
-        serializable_history = {step: positions.tolist() for step, positions in self.positions_history.items()}
-        
+        serializable_history = {
+            step: positions.tolist()
+            for step, positions in self.positions_history.items()
+        }
+
         # write to JSON
-        with open(file_path, 'w') as json_file:
+        with open(file_path, "w") as json_file:
             json.dump(serializable_history, json_file, indent=4)
+
+    def forward(self, input, mem, current_step):
+        spk, mem = super().forward(input, mem)
+
+        if self.training:
+            # training mode behavior (normal forward pass)
+            spk, mem = super().forward(input, mem)
+        else:
+            # eval mode behavior (custom clustering)
+            current_step = input.shape[
+                0
+            ]  # Assuming input shape is [batch_size, num_neurons]
+            self.update_firing_times(spk, current_step)
+            self.cluster_neurons(spk)
+        return spk, mem
