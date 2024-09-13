@@ -22,6 +22,7 @@ class CustomLeaky(snn.Leaky):
         return torch.sqrt(torch.sum((coord1 - coord2) ** 2))
 
     def update_firing_times(self, spk, current_step):
+        """Updates the firing times of the neurons based on the current timestep and spikes."""
         # update firing times based on current timestep
         self.firing_times[spk.any(dim=0)] = current_step
         # store all positions at current timestep for later export
@@ -30,8 +31,7 @@ class CustomLeaky(snn.Leaky):
         )
 
     def cluster_neurons_simple(self, spk):
-        # TODO extend, this will only move about the neurons a bit, but should be fine to test whether anything happens at all
-
+        """Looks at all neurons that fired in spk (can be a timestep or whole batch) and moves them closer to each other."""
         # get indices of neurons that fired
         fired_indices = torch.nonzero(spk, as_tuple=True)
 
@@ -50,18 +50,24 @@ class CustomLeaky(snn.Leaky):
         center = torch.mean(fired_coordinates, dim=0)
         self.coordinates[fired_indices[1]] += 0.01 * (fired_coordinates - center)
 
-    def cluster_neurons_batchwise(self, spk):
-        # 0. move all neuron coordinates outward from the center
-        # 1. remove any neurons that did not fire
-        # 2. analyze (from the full batch of neurons) which ones tend to fire together
+    def cluster_neurons_simple_stepwise(self, spk):
+        """go stepwise (for batch_size steps) over the neurons that fired, each time, do one step of cluster_neurons_simple"""
+        fired_indices = torch.nonzero(spk, as_tuple=True)[1]
+        if len(fired_indices) == 0:
+            return
 
-        # 3. move the coordinates of the neurons that tend to fire together closer to each other
+        # go stepwise (for len(fired_indices) steps) over the neurons that fired, each time, do one step of cluster_neurons_simple
+        for i in range(len(fired_indices)):
+            self.cluster_neurons_simple(spk[:, fired_indices[i]])
+
+    def cluster_neurons_corr_matrix(self, spk):
+        """Iterates through the batch, clustering neurons that fired together at each timestep."""
+        # this moves those that fired together multiple times in a batch closer to each other than the ones that fired fewer times
+        # should be a similar result to cluster_neurons_simple_stepwise, but might be more efficient
 
         # move all neuron coordinates outward from the center
         center = torch.mean(self.coordinates, dim=0)
         self.coordinates += 0.01 * (self.coordinates - center)
-
-        # remove any neurons that did not fire (TODO: check if this is necessary)
 
         # analyze (from the full batch of neurons) which ones tend to fire together
         correlation_matrix = torch.zeros(self.num_neurons, self.num_neurons)
@@ -91,22 +97,12 @@ class CustomLeaky(snn.Leaky):
                         * (self.coordinates[i] - self.coordinates[j])
                     )
 
-    def cluster_neurons_stepwise(self, spk):
-        # 1. remove any neurons that did not fire
-        # 2. go stepwise (for batch_size steps) over the neurons that fired, each time, do one step of cluster_neurons_simple
-        # 3. repeat for the next batch_size neurons that fired
-
-        # remove any neurons that did not fire (TODO: check if this is necessary)
-        fired_indices = torch.nonzero(spk, as_tuple=True)[1]
-        if len(fired_indices) == 0:
-            return
-        
-        # go stepwise (for len(fired_indices) steps) over the neurons that fired, each time, do one step of cluster_neurons_simple
-        for i in range(len(fired_indices)):
-            self.cluster_neurons_simple(spk[:, fired_indices[i]])
-
-
     def export_positions_history(self, file_path):
+        """Exports the positions history to a JSON file.
+
+        Args:
+            file_path (str): path to store the JSON file
+        """
         # convert NumPy arrays to lists for JSON serialization
         serializable_history = {
             step: positions.tolist()
