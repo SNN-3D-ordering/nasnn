@@ -2,7 +2,7 @@ import json
 
 
 class NetworkRepresentation:
-    def __init__(self, layers):
+    def __init__(self, layers=[]):
         self.layers = (
             layers  # List of layers, each layer is a 2D array of neuron indices
         )

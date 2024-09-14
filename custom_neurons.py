@@ -3,24 +3,23 @@ import torch
 import numpy as np
 from sklearn.cluster import KMeans
 import json
+from utils import map_to_2d_grid_row_wise
+from utils import convert_layer_size_to_grid_size
 
 
 class CustomLeaky(snn.Leaky):
     def __init__(self, beta, input_size):
         super().__init__(beta=beta)
         self.num_neurons = input_size
+        self.grid_dims = convert_layer_size_to_grid_size(input_size)
         self.coordinates = self.initialize_coordinates()
         self.firing_times = torch.zeros(input_size)
         self.positions_history = {}  # Dictionary to store positions at each timestep
-        self.connections = {} # Dictionary to store connections between neurons
+        self.connections = {}  # Dictionary to store connections between neurons
 
     def initialize_coordinates(self):
         # randomly initialized 2D coordinates for each neuron
         return torch.rand(self.num_neurons, 2)
-
-    def calculate_distance(self, coord1, coord2):
-        # euclidean distance
-        return torch.sqrt(torch.sum((coord1 - coord2) ** 2))
 
     def update_firing_times(self, spk, current_step):
         """Updates the firing times of the neurons based on the current timestep and spikes."""
@@ -125,16 +124,20 @@ class CustomLeaky(snn.Leaky):
         for prev_idx in prev_indices:
             for curr_idx in curr_indices:
                 connection = (prev_idx.item(), curr_idx.item())
-                if linear_layer.weight[prev_idx, curr_idx].item() != 0 and prev_idx.item() in self.connections:
+                if (
+                    linear_layer.weight[prev_idx, curr_idx].item() != 0
+                    and prev_idx.item() in self.connections
+                ):
                     self.connections[connection] += 1
                 else:
                     self.connections[connection] = 1
 
     def export_positions_history(self, file_path):
-        """Exports the positions history to a JSON file.
+        """
+        Exports the positions history to a JSON file.
 
         Args:
-            file_path (str): path to store the JSON file
+            file_path (str): path to store the JSON file.
         """
         # TODO potentially convert to work with grid coordinates instead of 2D coordinates
         # convert NumPy arrays to lists for JSON serialization
@@ -147,17 +150,34 @@ class CustomLeaky(snn.Leaky):
         with open(file_path, "w") as json_file:
             json.dump(serializable_history, json_file, indent=4)
 
+    def return_2d_grid(self):
+        """
+        Maps the 2D coordinates to a 2D grid.
+
+        Args:
+            grid_size (tuple): Size of the grid (rows, cols).
+
+        Returns:
+            np.ndarray: 2d grid with neuron indices.
+        """
+        coordinates = self.coordinates.cpu().numpy()
+        grid = map_to_2d_grid_row_wise(
+            coordinates, self.grid_dims
+        )  # TODO try out other mapping functions
+        return grid
+
     def forward(self, input, mem, current_step, prev_spk=None):
         spk, mem = super().forward(input, mem)
 
         # TODO fix train/test mode behavior (currently eval mode always runs)
         if not self.training:
-            #current_step = input.shape[0]  # TODO this is wrong (always 128)
-            self.update_firing_times(spk, current_step) # TODO check if we also want this for training
+            # current_step = input.shape[0]  # TODO this is wrong (always 128)
+            self.update_firing_times(
+                spk, current_step
+            )  # TODO check if we also want this for training
             self.cluster_neurons_simple(spk)
 
-        if prev_spk is not None:
-            self.update_connections(spk, prev_spk)
+            if prev_spk is not None:
+                self.update_connections(spk, prev_spk)
 
         return spk, mem
-    

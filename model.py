@@ -2,6 +2,7 @@ import snntorch as snn
 import torch
 import torch.nn as nn
 from custom_neurons import CustomLeaky
+from utils import convert_layer_size_to_grid_size
 
 
 class Net(nn.Module):
@@ -16,7 +17,6 @@ class Net(nn.Module):
         self.lif2 = CustomLeaky(beta=beta, input_size=num_outputs)
 
     def forward(self, x):
-
         # Initialize hidden states at t=0
         mem1 = self.lif1.init_leaky()
         mem2 = self.lif2.init_leaky()
@@ -38,3 +38,16 @@ class Net(nn.Module):
             mem2_rec.append(mem2)
 
         return torch.stack(spk2_rec), torch.stack(mem2_rec)
+    
+    def export_layers(self):
+        # get all CustomLeaky layers
+        layers = []
+        for module in self.modules():
+            if isinstance(module, CustomLeaky):
+                layers.append(module)
+
+        # export list of 2d grids
+        layer_outputs = []
+        for layer in layers:
+            layer_outputs.append(layer.return_2d_grid())
+        return layer_outputs

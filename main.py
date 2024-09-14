@@ -6,6 +6,7 @@ from train import train_model
 from test import test
 import matplotlib.pyplot as plt
 import argparse
+from network_representation import NetworkRepresentation
 
 # Argument parser for command line flags
 parser = argparse.ArgumentParser(description="Train or evaluate the model.")
@@ -80,3 +81,13 @@ if args.eval:
 
 if not args.train and not args.eval:
     print("Please specify either --train/-t or --eval/-e flag.")
+
+# get all layers
+customleaky_layers = net.export_layers()
+network_representation = NetworkRepresentation(customleaky_layers)
+
+# debugging: print the network representation
+for layer in customleaky_layers:
+    print(layer)
+
+

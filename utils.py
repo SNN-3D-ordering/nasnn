@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 def print_batch_accuracy(data, targets, net, batch_size, train=False):
@@ -30,3 +31,39 @@ def train_printer(
     print_batch_accuracy(data, targets, net, batch_size, train=True)
     print_batch_accuracy(test_data, test_targets, net, batch_size, train=False)
     print("\n")
+
+
+def map_to_2d_grid_row_wise(coordinates, grid_size):
+    """
+    Maps 2D coordinates to a 2D grid.
+
+    Args:
+        coordinates (np.ndarray): Array of 2D coordinates.
+        grid_size (tuple): Size of the grid (rows, cols).
+
+    Returns:
+        np.ndarray: 2D grid with neuron indices.
+    """
+    num_neurons = coordinates.shape[0]
+    sorted_indices = np.argsort(coordinates[:, 0])  # Sort by x-coordinate
+    grid = np.zeros(grid_size, dtype=int) - 1  # Initialize grid with -1 (empty)
+
+    for idx, neuron_idx in enumerate(sorted_indices):
+        row = idx // grid_size[1]
+        col = idx % grid_size[1]
+        grid[row, col] = neuron_idx
+
+    return grid
+
+
+def convert_layer_size_to_grid_size(layer_size):
+    sqrt_layer_size = int(np.ceil(np.sqrt(layer_size)))
+    # Verify that sqert_layer_size^2 >= layer_size
+    if sqrt_layer_size * sqrt_layer_size < layer_size:
+        raise ValueError("Layer size is not a square number")
+    return sqrt_layer_size, sqrt_layer_size
+
+
+def calculate_distance(self, coord1, coord2):
+    # euclidean distance
+    return torch.sqrt(torch.sum((coord1 - coord2) ** 2))
