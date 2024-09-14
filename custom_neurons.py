@@ -165,6 +165,15 @@ class CustomLeaky(snn.Leaky):
             coordinates, self.grid_dims
         )  # TODO try out other mapping functions
         return grid
+    
+    def return_connections(self):
+        """
+        Returns the connections between of this layer and the previous layer. 
+
+        Returns:
+            dict: Dictionary with connections between neurons.
+        """
+        return self.connections
 
     def forward(self, input, mem, current_step, prev_spk=None):
         spk, mem = super().forward(input, mem)

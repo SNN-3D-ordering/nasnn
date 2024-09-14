@@ -2,7 +2,7 @@ import snntorch as snn
 import torch
 import torch.nn as nn
 from custom_neurons import CustomLeaky
-from utils import convert_layer_size_to_grid_size
+from network_representation import NetworkRepresentation
 
 
 class Net(nn.Module):
@@ -39,15 +39,22 @@ class Net(nn.Module):
 
         return torch.stack(spk2_rec), torch.stack(mem2_rec)
     
-    def export_layers(self):
-        # get all CustomLeaky layers
+    def export_network_representation(self):
+        # Instantiate NetworkRepresentation
+        network_representation = NetworkRepresentation()
+
+        # Get all CustomLeaky layers
         layers = []
         for module in self.modules():
             if isinstance(module, CustomLeaky):
                 layers.append(module)
 
-        # export list of 2d grids
-        layer_outputs = []
-        for layer in layers:
-            layer_outputs.append(layer.return_2d_grid())
-        return layer_outputs
+        # Export list of 2D grids and connections
+        for layer_idx, layer in enumerate(layers):
+            network_representation.add_layer(layer.return_2d_grid())
+
+            connections = layer.return_connections()
+            for neuron_i, neuron_j in connections:
+                network_representation.add_connection(layer_idx, neuron_i, neuron_j)
+
+        return network_representation

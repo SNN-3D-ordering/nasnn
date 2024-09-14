@@ -84,11 +84,10 @@ if not args.train and not args.eval:
     print("Please specify either --train/-t or --eval/-e flag.")
 
 # get all layers
-customleaky_layers = net.export_layers()
-network_representation = NetworkRepresentation(customleaky_layers)
+network_representation = net.export_network_representation()
 
 # debugging: print the network representation
-for layer in customleaky_layers:
-    print(layer)
+print(network_representation.layers)
+print(network_representation.layer_connections)
 
 
