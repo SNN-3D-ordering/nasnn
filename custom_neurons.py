@@ -12,6 +12,7 @@ class CustomLeaky(snn.Leaky):
         self.coordinates = self.initialize_coordinates()
         self.firing_times = torch.zeros(input_size)
         self.positions_history = {}  # Dictionary to store positions at each timestep
+        self.connections = {} # Dictionary to store connections between neurons
 
     def initialize_coordinates(self):
         # randomly initialized 2D coordinates for each neuron
@@ -23,6 +24,7 @@ class CustomLeaky(snn.Leaky):
 
     def update_firing_times(self, spk, current_step):
         """Updates the firing times of the neurons based on the current timestep and spikes."""
+        # TODO remove if we use grid coords only
         # update firing times based on current timestep
         self.firing_times[spk.any(dim=0)] = current_step
         # store all positions at current timestep for later export
@@ -97,12 +99,44 @@ class CustomLeaky(snn.Leaky):
                         * (self.coordinates[i] - self.coordinates[j])
                     )
 
+    def update_connections(self, spk, prev_spk):
+        """Updates the connections between neurons based on the spikes at the current and previous timestep."""
+        # get indices of neurons that fired
+        curr_indices = torch.nonzero(spk, as_tuple=True)[1]
+        prev_indices = torch.nonzero(prev_spk, as_tuple=True)[1]
+
+        # update connections based on the current timestep
+        for prev_idx in prev_indices:
+            for curr_idx in curr_indices:
+                connection = (prev_idx.item(), curr_idx.item())
+                if connection in self.connections:
+                    self.connections[connection] += 1
+                else:
+                    self.connections[connection] = 1
+
+    def update_connections_linear(self, spk, prev_spk, linear_layer):
+        """Updates the connections between neurons based on if a spike has traveled along that linear connection."""
+        # TODO verify that this works
+        # get indices of neurons that fired
+        curr_indices = torch.nonzero(spk, as_tuple=True)[1]
+        prev_indices = torch.nonzero(prev_spk, as_tuple=True)[1]
+
+        # update connections based on the current timestep
+        for prev_idx in prev_indices:
+            for curr_idx in curr_indices:
+                connection = (prev_idx.item(), curr_idx.item())
+                if linear_layer.weight[prev_idx, curr_idx].item() != 0 and prev_idx.item() in self.connections:
+                    self.connections[connection] += 1
+                else:
+                    self.connections[connection] = 1
+
     def export_positions_history(self, file_path):
         """Exports the positions history to a JSON file.
 
         Args:
             file_path (str): path to store the JSON file
         """
+        # TODO potentially convert to work with grid coordinates instead of 2D coordinates
         # convert NumPy arrays to lists for JSON serialization
         serializable_history = {
             step: positions.tolist()
@@ -113,16 +147,17 @@ class CustomLeaky(snn.Leaky):
         with open(file_path, "w") as json_file:
             json.dump(serializable_history, json_file, indent=4)
 
-    def forward(self, input, mem, current_step):
+    def forward(self, input, mem, current_step, prev_spk=None):
         spk, mem = super().forward(input, mem)
 
         # TODO fix train/test mode behavior (currently eval mode always runs)
-        if self.training:
-            # training mode behavior (normal forward pass)
-            spk, mem = super().forward(input, mem)
-        else:
-            # eval mode behavior (custom clustering)
-            current_step = input.shape[0]  # TODO this is wrong (always 128)
-            self.update_firing_times(spk, current_step)
+        if not self.training:
+            #current_step = input.shape[0]  # TODO this is wrong (always 128)
+            self.update_firing_times(spk, current_step) # TODO check if we also want this for training
             self.cluster_neurons_simple(spk)
+
+        if prev_spk is not None:
+            self.update_connections(spk, prev_spk)
+
         return spk, mem
+    
