@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
 
 
 def print_batch_accuracy(data, targets, net, batch_size, train=False):
@@ -67,3 +68,9 @@ def convert_layer_size_to_grid_size(layer_size):
 def calculate_distance(self, coord1, coord2):
     # euclidean distance
     return torch.sqrt(torch.sum((coord1 - coord2) ** 2))
+
+
+def visualize_neuron_positions(net):
+    coordinates = net.lif1.coordinates.detach().numpy()
+    plt.scatter(coordinates[:, 0], coordinates[:, 1])
+    plt.show()

@@ -1,5 +1,5 @@
 import torch
-import matplotlib.pyplot as plt
+from utils import visualize_neuron_positions
 
 
 def test(net, test_loader, device):
@@ -19,11 +19,4 @@ def test(net, test_loader, device):
             correct += (predicted == targets).sum().item()
 
     visualize_neuron_positions(net)
-    
     return total, correct
-
-
-def visualize_neuron_positions(net):
-    coordinates = net.lif1.coordinates.detach().numpy()
-    plt.scatter(coordinates[:, 0], coordinates[:, 1])
-    plt.show()
