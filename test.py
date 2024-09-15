@@ -4,6 +4,7 @@ from utils import visualize_neuron_positions
 def test(net, test_loader, device, max_steps=None):
     total = 0
     correct = 0
+    net.testing = True
 
     with torch.no_grad():
         net.eval()
