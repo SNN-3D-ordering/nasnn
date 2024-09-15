@@ -1,14 +1,16 @@
 import torch
 from utils import visualize_neuron_positions
 
-
-def test(net, test_loader, device):
+def test(net, test_loader, device, max_steps=None):
     total = 0
     correct = 0
 
     with torch.no_grad():
         net.eval()
-        for data, targets in test_loader:
+        for step, (data, targets) in enumerate(test_loader):
+            if max_steps is not None and step >= max_steps:
+                break
+
             data = data.to(device)
             targets = targets.to(device)
 
