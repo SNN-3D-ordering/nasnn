@@ -1,7 +1,6 @@
 import snntorch as snn
 import torch
 import numpy as np
-from sklearn.cluster import KMeans
 import json
 from utils import map_to_2d_grid_row_wise
 from utils import convert_layer_size_to_grid_size
@@ -105,6 +104,19 @@ class CustomLeaky(snn.Leaky):
         curr_indices = torch.nonzero(spk, as_tuple=True)[1]
         input_indices = torch.nonzero(input_spk, as_tuple=True)[1]
     
+        # Print shapes for debugging
+        print(f"input_spk shape: {input_spk.shape}")
+        print(f"spk shape: {spk.shape}")
+        print(f"weight_matrix shape: {weight_matrix.shape}")
+    
+        # Ensure that the weight matrix dimensions match the input and current layer sizes
+        assert weight_matrix.shape[0] == input_spk.shape[1], "Weight matrix row size must match input layer size"
+        assert weight_matrix.shape[1] == spk.shape[1], "Weight matrix column size must match current layer size"
+    
+        # Validate indices
+        if curr_indices.max() >= weight_matrix.shape[1] or input_indices.max() >= weight_matrix.shape[0]:
+            raise IndexError("Index out of bounds for weight matrix dimensions")
+    
         # Create a mask for active connections (from non-zero weights)
         active_connections = weight_matrix[input_indices][:, curr_indices] != 0
     
@@ -123,6 +135,7 @@ class CustomLeaky(snn.Leaky):
             else:
                 self.connections[connection] = 1
 
+                
     def export_positions_history(self, file_path):
         """
         Exports the positions history to a JSON file.
@@ -168,16 +181,14 @@ class CustomLeaky(snn.Leaky):
 
     def forward(self, input, mem, current_step, weight_matrix): 
         spk, mem = super().forward(input, mem)
-
+        # print input shape
+        print(f"Input shape in fwd: {input.shape}")
         if not self.training:
             #self.update_firing_times(
             #    spk, current_step
             #)  # TODO check if we also want this for training / if we want it at all
             self.cluster_neurons_simple(spk)
 
-            # every 1k steps, print current step TODO debugging / remove
-            if current_step % 1000 == 0:
-                print(f"Current step: {current_step}")
-            self.update_connections(spk, input, weight_matrix)
+            #self.update_connections(spk, input, weight_matrix)
 
         return spk, mem
