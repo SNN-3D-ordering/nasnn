@@ -104,15 +104,14 @@ class CustomLeaky(snn.Leaky):
         curr_indices = torch.nonzero(spk, as_tuple=True)[1]
         input_indices = torch.nonzero(input_spk, as_tuple=True)[1]
     
-        # Print shapes for debugging
-        print(f"input_spk shape: {input_spk.shape}")
-        print(f"spk shape: {spk.shape}")
-        print(f"weight_matrix shape: {weight_matrix.shape}")
-    
         # Ensure that the weight matrix dimensions match the input and current layer sizes
         assert weight_matrix.shape[0] == input_spk.shape[1], "Weight matrix row size must match input layer size"
         assert weight_matrix.shape[1] == spk.shape[1], "Weight matrix column size must match current layer size"
-    
+
+        # Handle empty tensors
+        if curr_indices.numel() == 0 or input_indices.numel() == 0:
+            return
+        
         # Validate indices
         if curr_indices.max() >= weight_matrix.shape[1] or input_indices.max() >= weight_matrix.shape[0]:
             raise IndexError("Index out of bounds for weight matrix dimensions")
@@ -181,8 +180,6 @@ class CustomLeaky(snn.Leaky):
 
     def forward(self, input, mem, current_step, weight_matrix): 
         spk, mem = super().forward(input, mem)
-        # print input shape
-        print(f"Input shape in fwd: {input.shape}")
         if not self.training:
             #self.update_firing_times(
             #    spk, current_step
