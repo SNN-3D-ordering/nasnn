@@ -16,6 +16,7 @@ class CustomLeaky(snn.Leaky):
         self.firing_times = torch.zeros(input_size)
         self.positions_history = {}  # Dictionary to store positions at each timestep
         self.connections = {}  # Dictionary to store connections between neurons
+        self.prev_spk = None
 
     def initialize_coordinates(self):
         # randomly initialized 2D coordinates for each neuron
@@ -98,39 +99,29 @@ class CustomLeaky(snn.Leaky):
                         * (self.coordinates[i] - self.coordinates[j])
                     )
 
-    def update_connections(self, spk, prev_spk):
-        """Updates the connections between neurons based on the spikes at the current and previous timestep."""
-        # get indices of neurons that fired
+    def update_connections(self, spk, input_spk, weight_matrix):
+        """Updates the connections between neurons based on the spikes at the current timestep."""
+        # Get indices of neurons that fired in the current layer and the one before
         curr_indices = torch.nonzero(spk, as_tuple=True)[1]
-        prev_indices = torch.nonzero(prev_spk, as_tuple=True)[1]
-
-        # update connections based on the current timestep
-        for prev_idx in prev_indices:
-            for curr_idx in curr_indices:
-                connection = (prev_idx.item(), curr_idx.item())
-                if connection in self.connections:
-                    self.connections[connection] += 1
-                else:
-                    self.connections[connection] = 1
-
-    def update_connections_linear(self, spk, prev_spk, linear_layer):
-        """Updates the connections between neurons based on if a spike has traveled along that linear connection."""
-        # TODO verify that this works
-        # get indices of neurons that fired
-        curr_indices = torch.nonzero(spk, as_tuple=True)[1]
-        prev_indices = torch.nonzero(prev_spk, as_tuple=True)[1]
-
-        # update connections based on the current timestep
-        for prev_idx in prev_indices:
-            for curr_idx in curr_indices:
-                connection = (prev_idx.item(), curr_idx.item())
-                if (
-                    linear_layer.weight[prev_idx, curr_idx].item() != 0
-                    and prev_idx.item() in self.connections
-                ):
-                    self.connections[connection] += 1
-                else:
-                    self.connections[connection] = 1
+        input_indices = torch.nonzero(input_spk, as_tuple=True)[1]
+    
+        # Create a mask for active connections (from non-zero weights)
+        active_connections = weight_matrix[input_indices][:, curr_indices] != 0
+    
+        # Get the indices of active connections
+        active_input_indices, active_curr_indices = torch.nonzero(active_connections, as_tuple=True)
+    
+        # Map the indices back to the original neuron indices
+        active_input_indices = input_indices[active_input_indices]
+        active_curr_indices = curr_indices[active_curr_indices]
+    
+        # Update connections based on the active input neurons
+        for input_idx, curr_idx in zip(active_input_indices, active_curr_indices):
+            connection = (input_idx.item(), curr_idx.item())
+            if connection in self.connections:
+                self.connections[connection] += 1
+            else:
+                self.connections[connection] = 1
 
     def export_positions_history(self, file_path):
         """
@@ -175,18 +166,18 @@ class CustomLeaky(snn.Leaky):
         """
         return self.connections
 
-    def forward(self, input, mem, current_step, prev_spk=None):
+    def forward(self, input, mem, current_step, weight_matrix): 
         spk, mem = super().forward(input, mem)
 
-        # TODO fix train/test mode behavior (currently eval mode always runs)
         if not self.training:
-            # current_step = input.shape[0]  # TODO this is wrong (always 128)
-            self.update_firing_times(
-                spk, current_step
-            )  # TODO check if we also want this for training
+            #self.update_firing_times(
+            #    spk, current_step
+            #)  # TODO check if we also want this for training / if we want it at all
             self.cluster_neurons_simple(spk)
 
-            if prev_spk is not None:
-                self.update_connections(spk, prev_spk)
+            # every 1k steps, print current step TODO debugging / remove
+            if current_step % 1000 == 0:
+                print(f"Current step: {current_step}")
+            self.update_connections(spk, input, weight_matrix)
 
         return spk, mem
