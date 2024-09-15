@@ -77,7 +77,7 @@ if args.eval:
     net.load_state_dict(torch.load(args.model_path))
 
     # Evaluate model
-    total, correct = test(net, test_loader, device)
+    total, correct = test(net, test_loader, device, max_steps=100)
     print(f"Accuracy: {correct/total*100:.2f}%")
 
 if not args.train and not args.eval:

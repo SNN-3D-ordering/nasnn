@@ -20,22 +20,29 @@ class Net(nn.Module):
         # Initialize hidden states at t=0
         mem1 = self.lif1.init_leaky()
         mem2 = self.lif2.init_leaky()
-
+    
         # Record the final layer
         spk2_rec = []
         mem2_rec = []
-
+    
         for _ in range(self.num_steps):
-            # pass current step and weights for CustomLeaky layers
+            # Pass current step and weights for CustomLeaky layers
             self.current_step += 1
             cur1 = self.fc1(x)
-            spk1, mem1 = self.lif1(cur1, mem1, self.current_step, self.fc1.weight)
+            spk1, mem1 = self.lif1(cur1, mem1, self.current_step, self.fc1.weight.t())
+            
+            # Update connections using the spikes from the previous layer
+            self.update_connections(spk1, x, self.fc1.weight.t())
+            
             cur2 = self.fc2(spk1)
-            spk2, mem2 = self.lif2(cur2, mem2, self.current_step, self.fc2.weight)
-
+            spk2, mem2 = self.lif2(cur2, mem2, self.current_step, self.fc2.weight.t())
+            
+            # Update connections using the spikes from the previous layer
+            self.update_connections(spk2, spk1, self.fc2.weight.t())
+    
             spk2_rec.append(spk2)
             mem2_rec.append(mem2)
-
+    
         return torch.stack(spk2_rec), torch.stack(mem2_rec)
 
     def export_network_representation(self):
