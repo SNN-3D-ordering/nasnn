@@ -26,19 +26,18 @@ class Net(nn.Module):
         mem2_rec = []
 
         for _ in range(self.num_steps):
+            # pass current step and weights for CustomLeaky layers
             self.current_step += 1
             cur1 = self.fc1(x)
-            spk1, mem1 = self.lif1(
-                cur1, mem1, self.current_step
-            )  # Pass current step to update firing times
+            spk1, mem1 = self.lif1(cur1, mem1, self.current_step, self.fc1.weight)
             cur2 = self.fc2(spk1)
-            spk2, mem2 = self.lif2(cur2, mem2, self.current_step)
+            spk2, mem2 = self.lif2(cur2, mem2, self.current_step, self.fc2.weight)
 
             spk2_rec.append(spk2)
             mem2_rec.append(mem2)
 
         return torch.stack(spk2_rec), torch.stack(mem2_rec)
-    
+
     def export_network_representation(self):
         # Instantiate NetworkRepresentation
         network_representation = NetworkRepresentation()
@@ -53,7 +52,7 @@ class Net(nn.Module):
         for layer_idx, layer in enumerate(layers):
             network_representation.add_layer(layer.return_2d_grid())
 
-            connections = layer.return_connections()
+            connections = layer.return_connections()  # TODO is empty dict
             for neuron_i, neuron_j in connections:
                 network_representation.add_connection(layer_idx, neuron_i, neuron_j)
 
