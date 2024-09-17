@@ -125,7 +125,7 @@ class CustomLeaky(snn.Leaky):
         # Map the indices back to the original neuron indices
         active_input_indices = input_indices[active_input_indices]
         active_curr_indices = curr_indices[active_curr_indices]
-    
+
         # Update connections based on the active input neurons
         for input_idx, curr_idx in zip(active_input_indices, active_curr_indices):
             connection = (input_idx.item(), curr_idx.item())
@@ -134,7 +134,14 @@ class CustomLeaky(snn.Leaky):
             else:
                 self.connections[connection] = 1
 
-                
+
+    # TODO build this:
+    # def update_connections_cumulative(self, spk, input_spk, weight_matrix)
+    # get: prev_spk * weight-matrix (check if not putting prev_spk through layer in reverse is better = prev
+    # take spk, element wise multiply with prev
+    # sum those all up, get a matrix of the previous layer weighted by which neurons are most relevant to the spiking ones of this layer
+    # use that for the clustering later 
+    
     def export_positions_history(self, file_path):
         """
         Exports the positions history to a JSON file.
