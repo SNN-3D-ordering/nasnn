@@ -1,14 +1,17 @@
 import torch
-import matplotlib.pyplot as plt
+from utils import visualize_neuron_positions
 
-
-def test(net, test_loader, device):
+def test(net, test_loader, device, max_steps=None):
     total = 0
     correct = 0
+    net.testing = True
 
     with torch.no_grad():
         net.eval()
-        for data, targets in test_loader:
+        for step, (data, targets) in enumerate(test_loader):
+            if max_steps is not None and step >= max_steps:
+                break
+
             data = data.to(device)
             targets = targets.to(device)
 
@@ -19,11 +22,4 @@ def test(net, test_loader, device):
             correct += (predicted == targets).sum().item()
 
     visualize_neuron_positions(net)
-    
     return total, correct
-
-
-def visualize_neuron_positions(net):
-    coordinates = net.lif1.coordinates.detach().numpy()
-    plt.scatter(coordinates[:, 0], coordinates[:, 1])
-    plt.show()

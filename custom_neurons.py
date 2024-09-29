@@ -1,27 +1,29 @@
 import snntorch as snn
 import torch
 import numpy as np
-from sklearn.cluster import KMeans
 import json
+from utils import map_to_2d_grid_row_wise
+from utils import convert_layer_size_to_grid_size
 
 
 class CustomLeaky(snn.Leaky):
     def __init__(self, beta, input_size):
         super().__init__(beta=beta)
         self.num_neurons = input_size
+        self.grid_dims = convert_layer_size_to_grid_size(input_size)
         self.coordinates = self.initialize_coordinates()
         self.firing_times = torch.zeros(input_size)
         self.positions_history = {}  # Dictionary to store positions at each timestep
+        self.connections = {}  # Dictionary to store connections between neurons
+        self.prev_spk = None
 
     def initialize_coordinates(self):
         # randomly initialized 2D coordinates for each neuron
         return torch.rand(self.num_neurons, 2)
 
-    def calculate_distance(self, coord1, coord2):
-        # euclidean distance
-        return torch.sqrt(torch.sum((coord1 - coord2) ** 2))
-
     def update_firing_times(self, spk, current_step):
+        """Updates the firing times of the neurons based on the current timestep and spikes."""
+        # TODO remove if we use grid coords only
         # update firing times based on current timestep
         self.firing_times[spk.any(dim=0)] = current_step
         # store all positions at current timestep for later export
@@ -30,8 +32,7 @@ class CustomLeaky(snn.Leaky):
         )
 
     def cluster_neurons_simple(self, spk):
-        # TODO extend, this will only move about the neurons a bit, but should be fine to test whether anything happens at all
-
+        """Looks at all neurons that fired in spk (can be a timestep or whole batch) and moves them closer to each other."""
         # get indices of neurons that fired
         fired_indices = torch.nonzero(spk, as_tuple=True)
 
@@ -50,18 +51,24 @@ class CustomLeaky(snn.Leaky):
         center = torch.mean(fired_coordinates, dim=0)
         self.coordinates[fired_indices[1]] += 0.01 * (fired_coordinates - center)
 
-    def cluster_neurons_batchwise(self, spk):
-        # 0. move all neuron coordinates outward from the center
-        # 1. remove any neurons that did not fire
-        # 2. analyze (from the full batch of neurons) which ones tend to fire together
+    def cluster_neurons_simple_stepwise(self, spk):
+        """go stepwise (for batch_size steps) over the neurons that fired, each time, do one step of cluster_neurons_simple"""
+        fired_indices = torch.nonzero(spk, as_tuple=True)[1]
+        if len(fired_indices) == 0:
+            return
 
-        # 3. move the coordinates of the neurons that tend to fire together closer to each other
+        # go stepwise (for len(fired_indices) steps) over the neurons that fired, each time, do one step of cluster_neurons_simple
+        for i in range(len(fired_indices)):
+            self.cluster_neurons_simple(spk[:, fired_indices[i]])
+
+    def cluster_neurons_corr_matrix(self, spk):
+        """Iterates through the batch, clustering neurons that fired together at each timestep."""
+        # this moves those that fired together multiple times in a batch closer to each other than the ones that fired fewer times
+        # should be a similar result to cluster_neurons_simple_stepwise, but might be more efficient
 
         # move all neuron coordinates outward from the center
         center = torch.mean(self.coordinates, dim=0)
         self.coordinates += 0.01 * (self.coordinates - center)
-
-        # remove any neurons that did not fire (TODO: check if this is necessary)
 
         # analyze (from the full batch of neurons) which ones tend to fire together
         correlation_matrix = torch.zeros(self.num_neurons, self.num_neurons)
@@ -91,22 +98,58 @@ class CustomLeaky(snn.Leaky):
                         * (self.coordinates[i] - self.coordinates[j])
                     )
 
-    def cluster_neurons_stepwise(self, spk):
-        # 1. remove any neurons that did not fire
-        # 2. go stepwise (for batch_size steps) over the neurons that fired, each time, do one step of cluster_neurons_simple
-        # 3. repeat for the next batch_size neurons that fired
+    def update_connections(self, spk, input_spk, weight_matrix):
+        """Updates the connections between neurons based on the spikes at the current timestep."""
+        # Get indices of neurons that fired in the current layer and the one before
+        curr_indices = torch.nonzero(spk, as_tuple=True)[1]
+        input_indices = torch.nonzero(input_spk, as_tuple=True)[1]
+    
+        # Ensure that the weight matrix dimensions match the input and current layer sizes
+        assert weight_matrix.shape[0] == input_spk.shape[1], "Weight matrix row size must match input layer size"
+        assert weight_matrix.shape[1] == spk.shape[1], "Weight matrix column size must match current layer size"
 
-        # remove any neurons that did not fire (TODO: check if this is necessary)
-        fired_indices = torch.nonzero(spk, as_tuple=True)[1]
-        if len(fired_indices) == 0:
+        # Handle empty tensors
+        if curr_indices.numel() == 0 or input_indices.numel() == 0:
             return
         
-        # go stepwise (for len(fired_indices) steps) over the neurons that fired, each time, do one step of cluster_neurons_simple
-        for i in range(len(fired_indices)):
-            self.cluster_neurons_simple(spk[:, fired_indices[i]])
+        # Validate indices
+        if curr_indices.max() >= weight_matrix.shape[1] or input_indices.max() >= weight_matrix.shape[0]:
+            raise IndexError("Index out of bounds for weight matrix dimensions")
+    
+        # Create a mask for active connections (from non-zero weights)
+        active_connections = weight_matrix[input_indices][:, curr_indices] != 0
+    
+        # Get the indices of active connections
+        active_input_indices, active_curr_indices = torch.nonzero(active_connections, as_tuple=True)
+    
+        # Map the indices back to the original neuron indices
+        active_input_indices = input_indices[active_input_indices]
+        active_curr_indices = curr_indices[active_curr_indices]
+
+        # Update connections based on the active input neurons
+        for input_idx, curr_idx in zip(active_input_indices, active_curr_indices):
+            connection = (input_idx.item(), curr_idx.item())
+            if connection in self.connections:
+                self.connections[connection] += 1
+            else:
+                self.connections[connection] = 1
 
 
+    # TODO build this:
+    # def update_connections_cumulative(self, spk, input_spk, weight_matrix)
+    # get: prev_spk * weight-matrix (check if not putting prev_spk through layer in reverse is better = prev
+    # take spk, element wise multiply with prev
+    # sum those all up, get a matrix of the previous layer weighted by which neurons are most relevant to the spiking ones of this layer
+    # use that for the clustering later 
+    
     def export_positions_history(self, file_path):
+        """
+        Exports the positions history to a JSON file.
+
+        Args:
+            file_path (str): path to store the JSON file.
+        """
+        # TODO potentially convert to work with grid coordinates instead of 2D coordinates
         # convert NumPy arrays to lists for JSON serialization
         serializable_history = {
             step: positions.tolist()
@@ -117,16 +160,39 @@ class CustomLeaky(snn.Leaky):
         with open(file_path, "w") as json_file:
             json.dump(serializable_history, json_file, indent=4)
 
-    def forward(self, input, mem, current_step):
-        spk, mem = super().forward(input, mem)
+    def return_2d_grid(self):
+        """
+        Maps the 2D coordinates to a 2D grid.
 
-        # TODO fix train/test mode behavior (currently eval mode always runs)
-        if self.training:
-            # training mode behavior (normal forward pass)
-            spk, mem = super().forward(input, mem)
-        else:
-            # eval mode behavior (custom clustering)
-            current_step = input.shape[0]  # TODO this is wrong (always 128)
-            self.update_firing_times(spk, current_step)
+        Args:
+            grid_size (tuple): Size of the grid (rows, cols).
+
+        Returns:
+            np.ndarray: 2d grid with neuron indices.
+        """
+        coordinates = self.coordinates.cpu().numpy()
+        grid = map_to_2d_grid_row_wise(
+            coordinates, self.grid_dims
+        )  # TODO try out other mapping functions
+        return grid
+    
+    def return_connections(self):
+        """
+        Returns the connections between of this layer and the previous layer. 
+
+        Returns:
+            dict: Dictionary with connections between neurons.
+        """
+        return self.connections
+
+    def forward(self, input, mem, current_step, weight_matrix): 
+        spk, mem = super().forward(input, mem)
+        if not self.training:
+            #self.update_firing_times(
+            #    spk, current_step
+            #)  # TODO check if we also want this for training / if we want it at all
             self.cluster_neurons_simple(spk)
+
+            #self.update_connections(spk, input, weight_matrix)
+
         return spk, mem
