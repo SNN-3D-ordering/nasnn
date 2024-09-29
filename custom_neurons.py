@@ -32,7 +32,7 @@ class CustomLeaky(snn.Leaky):
             self.coordinates.clone().detach().cpu().numpy()
         )
 
-    def cluster_neurons_simple(self, spk):
+    def cluster_neurons_simple(self, spk, factor=0.01):
         """Looks at all neurons that fired in spk (can be a timestep or whole batch) and moves them closer to each other."""
         # get indices of neurons that fired
         fired_indices = torch.nonzero(spk, as_tuple=True)
@@ -46,11 +46,11 @@ class CustomLeaky(snn.Leaky):
 
         # move all neurons away from the center a bit
         center = torch.mean(fired_coordinates, dim=0)
-        self.coordinates += 0.01 * (self.coordinates - center)
+        self.coordinates += factor * (self.coordinates - center)
 
         # move all neurons that fired closer to each other
         center = torch.mean(fired_coordinates, dim=0)
-        self.coordinates[fired_indices[1]] += 0.01 * (fired_coordinates - center)
+        self.coordinates[fired_indices[1]] += factor * (fired_coordinates - center)
 
     def cluster_neurons_simple_stepwise(self, spk):
         """go stepwise (for batch_size steps) over the neurons that fired, each time, do one step of cluster_neurons_simple"""
