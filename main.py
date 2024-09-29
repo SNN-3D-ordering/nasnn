@@ -77,7 +77,7 @@ if args.eval:
     net.load_state_dict(torch.load(args.model_path))
 
     # Evaluate model
-    total, correct = test(net, test_loader, device, max_steps=1000)
+    total, correct = test(net, test_loader, device)
     print(f"Accuracy: {correct/total*100:.2f}%")
     print("Clustering...")
     cluster_simple(net, test_loader, device, max_steps=1000)
