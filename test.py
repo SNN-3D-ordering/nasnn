@@ -4,7 +4,6 @@ from utils import visualize_neuron_positions
 def test(net, test_loader, device, max_steps=None):
     total = 0
     correct = 0
-    net.testing = True
 
     with torch.no_grad():
         net.eval()
@@ -21,5 +20,16 @@ def test(net, test_loader, device, max_steps=None):
             total += targets.size(0)
             correct += (predicted == targets).sum().item()
 
+    # for debugging: visualize the neuron positions (2D continuous space)
     visualize_neuron_positions(net)
     return total, correct
+
+def record(net, test_loader, device, max_steps=None):
+    # TODO build function that records spikes for N steps
+    pass
+
+def cluster_simple(net, test_loader, device, max_steps=None):
+    # TODO build function that performs the naive clustering algorithm
+    with torch.no_grad():
+        net.eval()
+        net.set_cluster_simple(True)

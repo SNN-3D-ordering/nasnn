@@ -10,7 +10,8 @@ class Net(nn.Module):
         super().__init__()
         self.num_steps = num_steps
         self.current_step = 0
-        self.testing = False
+        self.cluster_simple = False
+        self.recording = False
 
         self.fc1 = nn.Linear(num_inputs, num_hidden)
         self.lif1 = CustomLeaky(beta=beta, input_size=num_hidden)
@@ -32,14 +33,14 @@ class Net(nn.Module):
             cur1 = self.fc1(x)
             spk1, mem1 = self.lif1(cur1, mem1, self.current_step, self.fc1.weight.t())
             
-            if self.testing:
-                self.lif1.update_connections(spk1, x, self.fc1.weight.t())
+            #if self.testing:
+            #    self.lif1.update_connections(spk1, x, self.fc1.weight.t())
             
             cur2 = self.fc2(spk1)
             spk2, mem2 = self.lif2(cur2, mem2, self.current_step, self.fc2.weight.t())
             
-            if self.testing:
-                self.lif2.update_connections(spk2, spk1, self.fc2.weight.t())
+            #if self.testing:
+            #    self.lif2.update_connections(spk2, spk1, self.fc2.weight.t())
     
             spk2_rec.append(spk2)
             mem2_rec.append(mem2)
@@ -65,3 +66,8 @@ class Net(nn.Module):
                 network_representation.add_connection(layer_idx, neuron_i, neuron_j)
 
         return network_representation
+
+    def set_cluster_simple(self, cluster_simple):
+        for module in self.modules():
+            if isinstance(module, CustomLeaky):
+                module.set_cluster_simple(True)
