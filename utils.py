@@ -74,3 +74,13 @@ def visualize_neuron_positions(net):
     coordinates = net.lif1.coordinates.detach().numpy()
     plt.scatter(coordinates[:, 0], coordinates[:, 1])
     plt.show()
+
+
+def visualize_heatmaps(heatmaps):
+    for heatmap in heatmaps:
+        visualize_heatmap(heatmap)
+
+def visualize_heatmap(heatmap):
+    """Function that takes a 1D array and visualizes it histogram"""
+    plt.hist(heatmap, bins='auto')
+    plt.show()

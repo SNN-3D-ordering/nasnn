@@ -2,7 +2,7 @@
 # TODO: Array übertragen in json
 # TODO: weight matrices ==layer_connections in NetworkRepresentation
 import torch
-from utils import visualize_neuron_positions
+from utils import visualize_neuron_positions, visualize_heatmaps
 import numpy as np
 
 import torch
@@ -31,6 +31,7 @@ def test(net, test_loader, device, max_steps=None):
             net.record_heatmap = False
 
     visualize_neuron_positions(net)
+    visualize_heatmaps(net.return_heatmaps())
 
     return total, correct
 
