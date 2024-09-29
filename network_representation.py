@@ -27,18 +27,6 @@ class NetworkRepresentation:
         else:
             self.weight_matrices[layer_idx][connection] = 1
 
-    def make_heatmap(self, spike_counts, layer_idx):
-        """Function that creates a heatmap for a given layer based on spike counts"""
-        if layer_idx >= len(self.layers):
-            print(f"No layer found at index {layer_idx}.")
-            return
-
-        neuron_grid = self.layers[layer_idx]
-        heatmap_data = spike_counts.reshape(neuron_grid.shape)
-
-        # sns.heatmap(heatmap_data.cpu(), annot=True, fmt="d", cmap="YlGnBu")
-        # plt.title(f"Neuron firing heatmap for layer {layer_idx}")
-
     def export_representation(self, file_path):
         # Convert heatmaps to lists for JSON serialization
         heatmap_lists = [
