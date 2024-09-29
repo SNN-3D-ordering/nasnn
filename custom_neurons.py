@@ -16,6 +16,7 @@ class CustomLeaky(snn.Leaky):
         self.positions_history = {}  # Dictionary to store positions at each timestep
         self.connections = {}  # Dictionary to store connections between neurons
         self.prev_spk = None
+        self.cluster_simple = False
 
     def initialize_coordinates(self):
         # randomly initialized 2D coordinates for each neuron
@@ -184,15 +185,19 @@ class CustomLeaky(snn.Leaky):
             dict: Dictionary with connections between neurons.
         """
         return self.connections
+    
+    def set_cluster_simple(self, cluster_simple):
+        self.cluster_simple = cluster_simple
 
     def forward(self, input, mem, current_step, weight_matrix): 
         spk, mem = super().forward(input, mem)
-        if not self.training:
+        if self.cluster_simple:
+            self.cluster_neurons_simple(spk)
+
+        #if not self.training:
             #self.update_firing_times(
             #    spk, current_step
             #)  # TODO check if we also want this for training / if we want it at all
-            self.cluster_neurons_simple(spk)
-
             #self.update_connections(spk, input, weight_matrix)
 
         return spk, mem
