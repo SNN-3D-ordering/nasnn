@@ -78,9 +78,20 @@ def visualize_neuron_positions(net):
 
 def visualize_heatmaps(heatmaps):
     for heatmap in heatmaps:
-        visualize_heatmap(heatmap)
+        visualize_tensor(heatmap)
 
-def visualize_heatmap(heatmap):
-    """Function that takes a 1D array and visualizes it histogram"""
-    plt.hist(heatmap, bins='auto')
+
+def visualize_tensor(tensor):
+    # Convert tensor to numpy array
+    values = tensor.detach().numpy()
+    
+    # Create a bar chart
+    plt.bar(range(len(values)), values)
+    
+    # Add labels and title
+    plt.xlabel('Index')
+    plt.ylabel('Value')
+    plt.title('Tensor Values')
+    
+    # Show the plot
     plt.show()
