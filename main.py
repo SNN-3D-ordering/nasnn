@@ -3,14 +3,16 @@ import yaml
 from model import Net
 from data import get_data_loaders
 from train import train_model
-from test import test
+from test import test, cluster_simple
 import matplotlib.pyplot as plt
 import argparse
+from network_representation import NetworkRepresentation
 
 # Argument parser for command line flags
 parser = argparse.ArgumentParser(description="Train or evaluate the model.")
 parser.add_argument("--train", "-t", action="store_true", help="Flag to run training")
 parser.add_argument("--eval", "-e", action="store_true", help="Flag to run evaluation")
+parser.add_argument("--presort", "-p", action="store_true", help="Flag to presort the neurons before clustering")
 parser.add_argument(
     "--model-path", type=str, default="model.pth", help="Path to save/load the model"
 )
@@ -36,7 +38,7 @@ train_loader, test_loader = get_data_loaders(
 # else:
 #    device = torch.device("cpu")
 
-# Use CPU for now (this is because the indices and tensors are not on the same device)
+# Use CPU for now (this is because the indices and tensors are not on the same device) TODO fix this
 device = torch.device("cpu")
 net = Net(
     model_params["num_inputs"],
@@ -75,8 +77,19 @@ if args.eval:
     net.load_state_dict(torch.load(args.model_path))
 
     # Evaluate model
-    total, correct = test(net, test_loader, device)
+    total, correct = test(net, test_loader, device, max_steps=1000)
     print(f"Accuracy: {correct/total*100:.2f}%")
+    print("Clustering...")
+    cluster_simple(net, test_loader, device, max_steps=1000)
 
 if not args.train and not args.eval:
     print("Please specify either --train/-t or --eval/-e flag.")
+
+# get all layers
+network_representation = net.export_network_representation()
+
+# debugging: print the network representation
+print(network_representation.layers)
+print(network_representation.layer_connections)
+
+
