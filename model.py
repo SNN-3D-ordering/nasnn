@@ -95,3 +95,6 @@ class Net(nn.Module):
         for module in self.modules():
             if isinstance(module, CustomLeaky):
                 module.set_cluster_simple(True)
+
+
+        

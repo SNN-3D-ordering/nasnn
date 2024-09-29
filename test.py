@@ -9,14 +9,15 @@ import torch
 import matplotlib.pyplot as plt
 
 
-def test(net, test_loader, device):
+def test(net, test_loader, device, max_steps=None):
     total = 0
     correct = 0
 
     with torch.no_grad():
         net.eval()
-        net.set_record_heatmap(True)  # Enable heatmap recording
+        net.record_heatmap = True
         for data, targets in test_loader:
+
             data = data.to(device)
             targets = targets.to(device)
 
@@ -27,27 +28,17 @@ def test(net, test_loader, device):
             correct += (predicted == targets).sum().item()
 
 
-            net.set_record_heatmap(False)
+            net.record_heatmap = False
 
     visualize_neuron_positions(net)
 
     return total, correct
-
-
-def visualize_neuron_positions(net):
-    coordinates = net.lif1.coordinates.detach().numpy()
-    plt.scatter(coordinates[:, 0], coordinates[:, 1])
-    plt.show()
-    # for debugging: visualize the neuron positions (2D continuous space)
-    visualize_neuron_positions(net)
-    return 
 
 def record(net, test_loader, device, max_steps=None):
     # TODO build function that records spikes for N steps
     pass
 
 def cluster_simple(net, test_loader, device, max_steps=None):
-    # TODO build function that performs the naive clustering algorithm
     with torch.no_grad():
         net.eval()
         net.set_cluster_simple(True)
