@@ -12,6 +12,7 @@ class Net(nn.Module):
         self.current_step = 0
         self.testing = False
         self.record_heatmap = False
+        self.heatmaps = []
 
         self.fc1 = nn.Linear(num_inputs, num_hidden)
         self.lif1 = CustomLeaky(beta=beta, input_size=num_hidden)
@@ -25,8 +26,11 @@ class Net(nn.Module):
 
         # Record heatmaps
         # Record heatmaps
-        heatmap1 = torch.zeros((self.fc1.out_features,), device=x.device)
-        heatmap2 = torch.zeros((self.fc2.out_features,), device=x.device)
+        if self.record_heatmap:
+            heatmap1 = torch.zeros((self.fc1.out_features,), device=x.device)
+            self.heatmaps.append(heatmap1)
+            heatmap2 = torch.zeros((self.fc2.out_features,), device=x.device)
+            self.heatmaps.append(heatmap2)
 
         # Record the final layer
         spk2_rec = []
@@ -56,7 +60,14 @@ class Net(nn.Module):
             spk2_rec.append(spk2)
             mem2_rec.append(mem2)
 
-        return torch.stack(spk2_rec), torch.stack(mem2_rec), [heatmap1, heatmap2]
+        if self.record_heatmap:
+            self.heatmaps[0] += heatmap1
+            self.heatmaps[1] += heatmap2
+
+        return torch.stack(spk2_rec), torch.stack(mem2_rec)
+    
+    def return_heatmaps(self):
+        return self.heatmaps
 
     def export_network_representation(self):
         # Instantiate NetworkRepresentation
