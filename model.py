@@ -11,6 +11,7 @@ class Net(nn.Module):
         self.num_steps = num_steps
         self.current_step = 0
         self.testing = False
+        self.record_heatmap = False
 
         self.fc1 = nn.Linear(num_inputs, num_hidden)
         self.lif1 = CustomLeaky(beta=beta, input_size=num_hidden)
@@ -21,30 +22,41 @@ class Net(nn.Module):
         # Initialize hidden states at t=0
         mem1 = self.lif1.init_leaky()
         mem2 = self.lif2.init_leaky()
-    
+
+        # Record heatmaps
+        # Record heatmaps
+        heatmap1 = torch.zeros((self.fc1.out_features,), device=x.device)
+        heatmap2 = torch.zeros((self.fc2.out_features,), device=x.device)
+
         # Record the final layer
         spk2_rec = []
         mem2_rec = []
-    
+
         for _ in range(self.num_steps):
             # Pass current step and weights for CustomLeaky layers
             self.current_step += 1
             cur1 = self.fc1(x)
             spk1, mem1 = self.lif1(cur1, mem1, self.current_step, self.fc1.weight.t())
-            
+
             if self.testing:
                 self.lif1.update_connections(spk1, x, self.fc1.weight.t())
-            
+
+            if self.record_heatmap:
+                heatmap1 += spk1.sum(dim=0)
+
             cur2 = self.fc2(spk1)
             spk2, mem2 = self.lif2(cur2, mem2, self.current_step, self.fc2.weight.t())
-            
+
             if self.testing:
                 self.lif2.update_connections(spk2, spk1, self.fc2.weight.t())
-    
+
+            if self.record_heatmap:
+                heatmap2 += spk2.sum(dim=0)
+
             spk2_rec.append(spk2)
             mem2_rec.append(mem2)
-    
-        return torch.stack(spk2_rec), torch.stack(mem2_rec)
+
+        return torch.stack(spk2_rec), torch.stack(mem2_rec), [heatmap1, heatmap2]
 
     def export_network_representation(self):
         # Instantiate NetworkRepresentation
