@@ -11,7 +11,7 @@ class Net(nn.Module):
         self.num_steps = num_steps
         self.current_step = 0
         self.cluster_simple = False
-        self.recording = False
+        self.record_spike_times = False
 
         self.fc1 = nn.Linear(num_inputs, num_hidden)
         self.lif1 = CustomLeaky(beta=beta, input_size=num_hidden)

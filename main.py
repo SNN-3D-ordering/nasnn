@@ -3,7 +3,7 @@ import yaml
 from model import Net
 from data import get_data_loaders
 from train import train_model
-from test import test
+from test import test, cluster_simple
 import matplotlib.pyplot as plt
 import argparse
 from network_representation import NetworkRepresentation
@@ -77,8 +77,10 @@ if args.eval:
     net.load_state_dict(torch.load(args.model_path))
 
     # Evaluate model
-    total, correct = test(net, test_loader, device, max_steps=100)
+    total, correct = test(net, test_loader, device, max_steps=1000)
     print(f"Accuracy: {correct/total*100:.2f}%")
+    print("Clustering...")
+    cluster_simple(net, test_loader, device, max_steps=1000)
 
 if not args.train and not args.eval:
     print("Please specify either --train/-t or --eval/-e flag.")
