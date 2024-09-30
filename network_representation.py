@@ -11,7 +11,7 @@ class NetworkRepresentation:
             layers  # List of spiking layers, each layer is a 2D array of neuron indices
         )
         self.weight_matrices = weight_matrices  # List of weight matrices for each fully connected layer
-        self.heatmaps = [None for _ in layers]  # Initialize heatmaps for each layer
+        self.heatmaps = heatmaps  # Initialize heatmaps for each layer
         self.activations = []  # List of activations for each layer (batch_amount lists of layer_size activations)
 
     def add_layer(self, layer, layer_idx=None):
@@ -41,6 +41,9 @@ class NetworkRepresentation:
 
     def export_representation(self, file_path):
         # Assert that the amounts match up
+        print(len(self.layers))
+        print(len(self.weight_matrices))
+        print(len(self.heatmaps))
         assert len(self.layers) == len(self.heatmaps)
         assert len(self.layers) - 1 == len(self.weight_matrices)
 
@@ -64,12 +67,12 @@ class NetworkRepresentation:
         with open(file_path, "w") as json_file:
             json.dump(representation, json_file, indent=4)
 
-    def export_activations(self, file_path):
+    def export_activations(self, activations, file_path):
         # Assert that the amounts match up
         assert len(self.layers) == len(self.activations[1])
 
         metadata = {
-            "num_layers": len(self.layers),
+            "num_layers": self.activations[1],
             "layer_dimensions": [layer.shape for layer in self.layers],
             "batch_amount": self.activations[0],
         }

@@ -65,6 +65,11 @@ def convert_layer_size_to_grid_size(layer_size):
     return sqrt_layer_size, sqrt_layer_size
 
 
+def generate_square_grid_ascending(layer_size):
+    grid_size = convert_layer_size_to_grid_size(layer_size)
+    grid = np.arange(layer_size).reshape(grid_size)
+    return grid
+
 def calculate_distance(self, coord1, coord2):
     # euclidean distance
     return torch.sqrt(torch.sum((coord1 - coord2) ** 2))
@@ -87,7 +92,7 @@ def visualize_tensor(tensor):
     
     # Sort values for better visualization
     values = np.sort(values)
-    
+
     # Create a bar chart
     plt.bar(range(len(values)), values)
     
