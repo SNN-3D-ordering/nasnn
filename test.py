@@ -40,31 +40,40 @@ def test(net, test_loader, device, max_steps=None):
 
     return total, correct
 
+
+import torch
+
+
 def record(net, test_loader, device, record_batches=None):
     with torch.no_grad():
         net.eval()
         net.record_spike_times = True
+        batch_count = 0 
+
         for data, targets in test_loader:
+            if record_batches is not None and batch_count >= record_batches:
+                break  # Stop recording after record_batches
 
             data = data.to(device)
             targets = targets.to(device)
 
-            test_spk, _ = net(data.view(data.size(0), -1))
+            _, _ = net(data.view(data.size(0), -1))
 
-            _, predicted = test_spk.sum(dim=0).max(1)
+            batch_count += 1 
 
-            net.record_heatmap = False
+        print("Recorded spike times for ", batch_count, " batches.")
+        net.record_heatmap = False
 
-    network_representation = NetworkRepresentation(net.export_model_structure())
+    layers, weight_matrices, heatmaps = net.export_model_structure()
+    network_representation = NetworkRepresentation(layers, weight_matrices, heatmaps)
 
     # Debugging:
     heatmaps = network_representation.heatmaps
     visualize_neuron_positions(net)
     visualize_heatmaps(heatmaps)
 
-    activations = net.get_activations # TODO maybe rewrite networkRepresentation class to just get the net at init
+    activations = net.get_activations()  # Call the method to get activations
     network_representation.export_activations(activations, "network_activations.json")
-
 
 
 def cluster_simple(net, test_loader, device, max_steps=None):
@@ -72,8 +81,8 @@ def cluster_simple(net, test_loader, device, max_steps=None):
         net.eval()
         net.set_cluster_simple(True)
 
-        #print("Clustering for ", np.max(max_steps, len(enumerate(test_loader))), " steps.")
-        
+        # print("Clustering for ", np.max(max_steps, len(enumerate(test_loader))), " steps.")
+
         for step, (data, targets) in enumerate(test_loader):
             if max_steps is not None and step >= max_steps:
                 break

@@ -70,6 +70,7 @@ def generate_square_grid_ascending(layer_size):
     grid = np.arange(layer_size).reshape(grid_size)
     return grid
 
+
 def calculate_distance(self, coord1, coord2):
     # euclidean distance
     return torch.sqrt(torch.sum((coord1 - coord2) ** 2))
@@ -103,3 +104,15 @@ def visualize_tensor(tensor):
     
     # Show the plot
     plt.show()
+
+
+def convert_tensors(obj):
+    """Convert lists or dicts of tensors to lists of lists for JSON serialization."""
+    if isinstance(obj, torch.Tensor):
+        return obj.tolist()
+    elif isinstance(obj, list):
+        return [convert_tensors(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {key: convert_tensors(value) for key, value in obj.items()}
+    else:
+        return obj

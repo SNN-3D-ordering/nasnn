@@ -1,4 +1,5 @@
 import json
+from utils import convert_tensors
 
 # TODO: Heatmaps/ wann feuert welches neuron?
 # TODO: Array übertragen in json
@@ -10,9 +11,13 @@ class NetworkRepresentation:
         self.layers = (
             layers  # List of spiking layers, each layer is a 2D array of neuron indices
         )
-        self.weight_matrices = weight_matrices  # List of weight matrices for each fully connected layer
+        self.weight_matrices = (
+            weight_matrices  # List of weight matrices for each fully connected layer
+        )
         self.heatmaps = heatmaps  # Initialize heatmaps for each layer
-        self.activations = []  # List of activations for each layer (batch_amount lists of layer_size activations)
+        self.activations = (
+            []
+        )  # List of activations for each layer (batch_amount lists of layer_size activations)
 
     def add_layer(self, layer, layer_idx=None):
         if layer_idx is None:
@@ -29,7 +34,7 @@ class NetworkRepresentation:
     def add_heatmap(self, heatmap, layer_idx=None):
         if layer_idx is None:
             self.heatmaps.append(heatmap)
-        else:  
+        else:
             self.heatmaps[layer_idx] = heatmap
 
     # def add_connection(self, layer_idx, neuron_i, neuron_j):
@@ -41,9 +46,6 @@ class NetworkRepresentation:
 
     def export_representation(self, file_path):
         # Assert that the amounts match up
-        print(len(self.layers))
-        print(len(self.weight_matrices))
-        print(len(self.heatmaps))
         assert len(self.layers) == len(self.heatmaps)
         assert len(self.layers) - 1 == len(self.weight_matrices)
 
@@ -71,30 +73,24 @@ class NetworkRepresentation:
             "weight_matrices": weight_matrix_lists,
             "heatmaps": heatmap_lists,
         }
-        
+
         with open(file_path, "w") as json_file:
             json.dump(representation, json_file, indent=4)
 
     def export_activations(self, activations, file_path):
         # Assert that the amounts match up
-        assert len(self.layers) == len(self.activations[1])
+        assert len(self.layers) == len(activations[0])
 
         metadata = {
-            "num_layers": self.activations[1],
+            "num_layers": len(activations[0]),
             "layer_dimensions": [layer.shape for layer in self.layers],
-            "batch_amount": self.activations[0],
+            "batch_amount": len(activations),
         }
-
-        # Convert activations to lists for JSON serialization. 
-        activation_lists = [
-            [activation.tolist() for activation in batch]
-            for batch in self.activations
-        ]
 
         representation = {
             "metadata": metadata,
             "layers": [layer.tolist() for layer in self.layers],
-            "activations": activation_lists,
+            "activations": convert_tensors(activations),
         }
 
         with open(file_path, "w") as json_file:
