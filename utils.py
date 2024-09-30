@@ -85,6 +85,9 @@ def visualize_tensor(tensor):
     # Convert tensor to numpy array
     values = tensor.detach().numpy()
     
+    # Sort values for better visualization
+    values = np.sort(values)
+    
     # Create a bar chart
     plt.bar(range(len(values)), values)
     

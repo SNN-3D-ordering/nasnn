@@ -3,6 +3,7 @@
 # TODO: weight matrices ==layer_connections in NetworkRepresentation
 import torch
 from utils import visualize_neuron_positions, visualize_heatmaps
+from network_representation import NetworkRepresentation
 import numpy as np
 
 import torch
@@ -30,8 +31,11 @@ def test(net, test_loader, device, max_steps=None):
 
             net.record_heatmap = False
 
+    network_representation = NetworkRepresentation(net.export_representation())
+    heatmaps = network_representation.heatmaps
+
     visualize_neuron_positions(net)
-    visualize_heatmaps(net.return_heatmaps())
+    visualize_heatmaps(heatmaps)
 
     return total, correct
 

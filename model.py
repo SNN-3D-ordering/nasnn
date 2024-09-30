@@ -68,33 +68,29 @@ class Net(nn.Module):
 
         return torch.stack(spk2_rec), torch.stack(mem2_rec)
     
-    def return_heatmaps(self):
-        return self.heatmaps
+    def export_model_structure(self):
+        """Returns all spiking layers as 2d grids and weight matrices of fully connected layers.
 
-    def export_network_representation(self):
-        # Instantiate NetworkRepresentation
-        network_representation = NetworkRepresentation()
-
-        # Get all CustomLeaky layers
+        Returns:
+            list, list: list of 2d grids, list of weight matrices
+        """
         layers = []
+        weight_matrices = []
+        heatmaps = self.heatmaps
+
         for module in self.modules():
             if isinstance(module, CustomLeaky):
-                layers.append(module)
+                layers.append(module.return_2d_grid())
+            elif isinstance(module, nn.Linear):
+                weight_matrices.append(module.weight.data)
 
-        # Export list of 2D grids and connections
-        for layer_idx, layer in enumerate(layers):
-            network_representation.add_layer(layer.return_2d_grid())
-
-            connections = layer.return_connections()  # TODO is empty dict
-            for neuron_i, neuron_j in connections:
-                network_representation.add_connection(layer_idx, neuron_i, neuron_j)
-
-        return network_representation
+        return layers, weight_matrices, heatmaps
 
     def set_cluster_simple(self, cluster_simple):
+        """Sets the cluster_simple attribute of all CustomLeaky layers."""
         for module in self.modules():
             if isinstance(module, CustomLeaky):
-                module.set_cluster_simple(True)
+                module.set_cluster_simple(cluster_simple)
 
 
         
