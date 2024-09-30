@@ -14,6 +14,7 @@ class Net(nn.Module):
         self.testing = False # TODO remove
         self.record_heatmap = False
         self.heatmaps = []
+        self.activations = [] # TODO rename heatmaps/activations to something better
         self.cluster_simple = False
         self.record_spike_times = False
 

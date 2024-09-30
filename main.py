@@ -3,7 +3,7 @@ import yaml
 from model import Net
 from data import get_data_loaders
 from train import train_model
-from test import test, cluster_simple
+from test import test, cluster_simple, record
 import matplotlib.pyplot as plt
 import argparse
 from network_representation import NetworkRepresentation
@@ -78,17 +78,17 @@ if args.eval:
     # Evaluate model
     total, correct = test(net, test_loader, device)
     print(f"Accuracy: {correct/total*100:.2f}%")
+
+    # Run simple clustering
     print("Clustering...")
     cluster_simple(net, test_loader, device, max_steps=1000)
+
+    # Record spike times for 100 batches
+    print("Recording spike times...")
+    record(net, test_loader, device, record_batches=10)
 
 if not args.train and not args.eval:
     print("Please specify either --train/-t or --eval/-e flag.")
 
-# get all layers
-network_representation = net.export_network_representation()
-
-# debugging: print the network representation
-print(network_representation.layers)
-print(network_representation.layer_connections)
 
 
