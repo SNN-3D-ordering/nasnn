@@ -52,18 +52,26 @@ class NetworkRepresentation:
             "layer_dimensions": [layer.shape for layer in self.layers],
         }
 
-        # Convert heatmaps to lists for JSON serialization
+        # Convert tensors to lists for JSON serialization
         heatmap_lists = [
             heatmap.tolist() if heatmap is not None else None
             for heatmap in self.heatmaps
         ]
 
+        weight_matrix_lists = [
+            weight_matrix.tolist() if weight_matrix is not None else None
+            for weight_matrix in self.weight_matrices
+        ]
+
+        layer_lists = [layer.tolist() for layer in self.layers]
+
         representation = {
             "metadata": metadata,
-            "layers": [layer.tolist() for layer in self.layers],
-            "weight_matrices": self.weight_matrices,
+            "layers": layer_lists,
+            "weight_matrices": weight_matrix_lists,
             "heatmaps": heatmap_lists,
         }
+        
         with open(file_path, "w") as json_file:
             json.dump(representation, json_file, indent=4)
 
