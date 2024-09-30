@@ -12,7 +12,6 @@ from network_representation import NetworkRepresentation
 parser = argparse.ArgumentParser(description="Train or evaluate the model.")
 parser.add_argument("--train", "-t", action="store_true", help="Flag to run training")
 parser.add_argument("--eval", "-e", action="store_true", help="Flag to run evaluation")
-parser.add_argument("--presort", "-p", action="store_true", help="Flag to presort the neurons before clustering")
 parser.add_argument(
     "--model-path", type=str, default="model.pth", help="Path to save/load the model"
 )
