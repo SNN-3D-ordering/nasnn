@@ -103,8 +103,8 @@ if args.eval:
     cluster_simple(net, test_loader, device, max_steps=1000)
 
     # Record spike times for 100 batches
-    print("Recording spike times...")
-    record(net, test_loader, device, record_batches=10)
+    #print("Recording spike times...")
+    #record(net, test_loader, device, record_batches=10)
 
 if not args.train and not args.eval:
     print("Please specify either --train/-t or --eval/-e flag.")
