@@ -53,10 +53,6 @@ def calculate_distance_between_layers(data, layer_idx):
         (current_shape[0] - next_shape[0]) // 2,
         (current_shape[1] - next_shape[1]) // 2,
     )
-    offset_next_to_current = (
-        (next_shape[0] - current_shape[0]) // 2,
-        (next_shape[1] - current_shape[1]) // 2,
-    )
 
     layer_distance = 0
 
