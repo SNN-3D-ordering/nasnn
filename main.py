@@ -4,6 +4,7 @@ from model import Net
 from data import get_data_loaders
 from train import train_model
 from test import test, cluster_simple, record
+from utils import get_next_square_numbers
 import matplotlib.pyplot as plt
 import argparse
 from network_representation import NetworkRepresentation
@@ -23,6 +24,24 @@ with open("config.yaml", "r") as file:
 
 model_params = config["model"]
 training_params = config["training"]
+
+# verify that num_inputs, num_hidden are square numbers
+bigger_num_inputs, smaller_num_inputs = get_next_square_numbers(model_params["num_inputs"])
+bigger_num_hidden, smaller_num_hidden = get_next_square_numbers(model_params["num_hidden"])
+
+if (
+    bigger_num_inputs != model_params["num_inputs"]
+    or bigger_num_hidden != model_params["num_hidden"]
+):
+    print(
+        f"Some model parameters were not square numbers. Consider adjusting to the next bigger or smaller square numbers to avoid padding:"
+    )
+    if bigger_num_inputs != model_params["num_inputs"]:
+        print(f"num_inputs: {model_params['num_inputs']} -> {bigger_num_inputs} or {smaller_num_inputs}")
+
+    if bigger_num_hidden != model_params["num_hidden"]:
+        print(f"num_hidden: {model_params['num_hidden']} -> {bigger_num_hidden} or {smaller_num_hidden}")
+
 
 # Initialize data loaders
 train_loader, test_loader = get_data_loaders(
