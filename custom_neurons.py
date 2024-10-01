@@ -125,9 +125,6 @@ class CustomLeaky(snn.Leaky):
 
     def forward(self, input, mem, current_step, weight_matrix): 
         spk, mem = super().forward(input, mem)
-        if self.cluster_simple:
-            self.cluster_neurons_simple(spk)
-
         #if not self.training:
             #self.update_firing_times(
             #    spk, current_step
