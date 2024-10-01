@@ -96,6 +96,23 @@ def visualize_neuron_positions(net):
     plt.show()
 
 
+def visualize_neuron_positions_color(layer, spk_sum=None, title="Neuron Coordinates"):
+    x_coords = layer.coordinates[:, 0].numpy()
+    y_coords = layer.coordinates[:, 1].numpy()
+
+    if spk_sum is not None:
+        colors = spk_sum.numpy()
+    else:
+        colors = "b"  # Default color if spk_sum is not provided
+
+    plt.scatter(x_coords, y_coords, c=colors, cmap="viridis", s=100, edgecolor="k")
+    plt.colorbar(label="Spike Sum")
+    plt.title(title)
+    plt.xlabel("X Coordinate")
+    plt.ylabel("Y Coordinate")
+    plt.show()
+
+
 def visualize_heatmaps(heatmaps):
     for heatmap in heatmaps:
         visualize_tensor(heatmap)
