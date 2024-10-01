@@ -57,12 +57,32 @@ def map_to_2d_grid_row_wise(coordinates, grid_size):
     return grid
 
 
+def get_next_square_numbers(number):
+    """
+    Returns the two closest square numbers to the given number (larger square, smaller square).
+    """
+
+    square_ceil = int(np.ceil(np.sqrt(number))) ** 2
+    square_floor = int(np.floor(np.sqrt(number))) ** 2
+
+    if square_ceil == number:
+        return square_ceil, square_ceil
+
+    return square_ceil, square_floor
+
+
 def convert_layer_size_to_grid_size(layer_size):
     sqrt_layer_size = int(np.ceil(np.sqrt(layer_size)))
     # Verify that sqert_layer_size^2 >= layer_size
     if sqrt_layer_size * sqrt_layer_size < layer_size:
         raise ValueError("Layer size is not a square number")
     return sqrt_layer_size, sqrt_layer_size
+
+
+def generate_square_grid_ascending(layer_size):
+    grid_size = convert_layer_size_to_grid_size(layer_size)
+    grid = np.arange(layer_size).reshape(grid_size)
+    return grid
 
 
 def calculate_distance(self, coord1, coord2):
@@ -74,3 +94,39 @@ def visualize_neuron_positions(net):
     coordinates = net.lif1.coordinates.detach().numpy()
     plt.scatter(coordinates[:, 0], coordinates[:, 1])
     plt.show()
+
+
+def visualize_heatmaps(heatmaps):
+    for heatmap in heatmaps:
+        visualize_tensor(heatmap)
+
+
+def visualize_tensor(tensor):
+    # Convert tensor to numpy array
+    values = tensor.detach().numpy()
+
+    # Sort values for better visualization
+    values = np.sort(values)
+
+    # Create a bar chart
+    plt.bar(range(len(values)), values)
+
+    # Add labels and title
+    plt.xlabel("Index")
+    plt.ylabel("Value")
+    plt.title("Tensor Values")
+
+    # Show the plot
+    plt.show()
+
+
+def convert_tensors(obj):
+    """Convert lists or dicts of tensors to lists of lists for JSON serialization."""
+    if isinstance(obj, torch.Tensor):
+        return obj.tolist()
+    elif isinstance(obj, list):
+        return [convert_tensors(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {key: convert_tensors(value) for key, value in obj.items()}
+    else:
+        return obj
