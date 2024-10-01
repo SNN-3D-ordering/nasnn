@@ -2,7 +2,7 @@
 # TODO: Array übertragen in json
 # TODO: weight matrices ==layer_connections in NetworkRepresentation
 import torch
-from utils import visualize_neuron_positions, visualize_heatmaps
+from utils import visualize_neuron_positions_color, visualize_heatmaps
 from network_representation import NetworkRepresentation
 import numpy as np
 
@@ -33,8 +33,8 @@ def test(net, test_loader, device, max_steps=None):
     layers, weight_matrices, heatmaps = net.export_model_structure()
     network_representation = NetworkRepresentation(layers, weight_matrices, heatmaps)
 
-    visualize_neuron_positions(net)
-    visualize_heatmaps(heatmaps)
+    visualize_neuron_positions_color(net.lif1)
+    #visualize_heatmaps(heatmaps)
 
     network_representation.export_representation("network_representation.json")
 
@@ -69,7 +69,7 @@ def record(net, test_loader, device, record_batches=None):
 
     # Debugging:
     heatmaps = network_representation.heatmaps
-    visualize_neuron_positions(net)
+    visualize_neuron_positions_color(net.lif1)
     visualize_heatmaps(heatmaps)
 
     activations = net.get_activations()  # Call the method to get activations
@@ -81,8 +81,6 @@ def cluster_simple(net, test_loader, device, max_steps=None):
         net.eval()
         net.set_cluster_simple(True)
 
-        # print("Clustering for ", np.max(max_steps, len(enumerate(test_loader))), " steps.")
-
         for step, (data, targets) in enumerate(test_loader):
             if max_steps is not None and step >= max_steps:
                 break
@@ -92,5 +90,5 @@ def cluster_simple(net, test_loader, device, max_steps=None):
 
             _, _ = net(data.view(data.size(0), -1))
 
-        visualize_neuron_positions(net)
+        visualize_neuron_positions_color(net.lif1)
         return None

@@ -6,6 +6,7 @@ from utils import map_to_2d_grid_row_wise
 from utils import convert_layer_size_to_grid_size
 
 
+
 class CustomLeaky(snn.Leaky):
     def __init__(self, beta, input_size):
         super().__init__(beta=beta)
@@ -32,33 +33,41 @@ class CustomLeaky(snn.Leaky):
             self.coordinates.clone().detach().cpu().numpy()
         )
 
-    def cluster_neurons_simple(self, spk, factor=0.01):
+    def cluster_neurons_simple(self, spk, factor=0.001, heat=0.1):
         """Looks at all neurons that fired in spk (can be a timestep or whole batch) and moves them closer to each other."""
         # get sum of spk over batch dimension
         spk_sum = torch.sum(spk, dim=0)
-        avg_spk_sum = torch.mean(spk_sum)
-
-        # Plot initial coordinates
-        self.plot_coordinates(spk_sum=spk_sum, title="Initial Coordinates")
-
+    
         # get indices of neurons that fired
         fired_indices = torch.nonzero(spk_sum).squeeze()
-
+    
         if fired_indices.numel() == 0:
             return  # skip clustering
-
+    
         fired_coordinates = self.coordinates[fired_indices]
-
+    
         # move each neuron that fired (factor*spk_sum[neuron coordinates]) closer to the average of all neurons that fired
-        self.coordinates[fired_indices] += (
+        inward_movement = (
             factor
             * spk_sum[fired_indices].reshape(-1, 1)
             * (torch.mean(fired_coordinates, dim=0) - fired_coordinates)
         )
+    
+        self.coordinates[fired_indices] += inward_movement
 
-        # move all neurons away from the center by the average amount that they moved towards the center
+        total_inward_movement = torch.sum(inward_movement, dim=0)
+    
+        # Calculate the outward movement for all neurons proportionally
         center = torch.mean(self.coordinates, dim=0)
-        self.coordinates += factor * (center - self.coordinates) * avg_spk_sum
+        distances_from_center = torch.norm(self.coordinates - center, dim=1, keepdim=True)
+        outward_movement = (total_inward_movement / self.coordinates.size(0)) * (self.coordinates - center) / (distances_from_center + 1e-6)
+    
+        # Apply the outward movement
+        self.coordinates += outward_movement
+    
+        # Add a small random perturbation to spread neurons out slightly
+        if heat != 0:
+            self.coordinates += torch.randn_like(self.coordinates) * heat
 
 
     # TODO build this:
