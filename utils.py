@@ -73,8 +73,8 @@ def get_next_square_numbers(number):
 
 def convert_layer_size_to_grid_size(layer_size):
     sqrt_layer_size = int(np.ceil(np.sqrt(layer_size)))
-    # Verify that sqert_layer_size^2 >= layer_size
-    if sqrt_layer_size * sqrt_layer_size < layer_size:
+    # Verify that sqrt_layer_size^2 >= layer_size
+    if sqrt_layer_size**2 < layer_size:
         raise ValueError("Layer size is not a square number")
     return sqrt_layer_size, sqrt_layer_size
 
@@ -93,6 +93,23 @@ def calculate_distance(self, coord1, coord2):
 def visualize_neuron_positions(net):
     coordinates = net.lif1.coordinates.detach().numpy()
     plt.scatter(coordinates[:, 0], coordinates[:, 1])
+    plt.show()
+
+
+def visualize_neuron_positions_color(layer, spk_sum=None, title="Neuron Coordinates"):
+    x_coords = layer.coordinates[:, 0].numpy()
+    y_coords = layer.coordinates[:, 1].numpy()
+
+    if spk_sum is not None:
+        colors = spk_sum.numpy()
+    else:
+        colors = "b"  # Default color if spk_sum is not provided
+
+    plt.scatter(x_coords, y_coords, c=colors, cmap="viridis", s=100, edgecolor="k")
+    plt.colorbar(label="Spike Sum")
+    plt.title(title)
+    plt.xlabel("X Coordinate")
+    plt.ylabel("Y Coordinate")
     plt.show()
 
 
