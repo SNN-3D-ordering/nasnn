@@ -33,29 +33,32 @@ class CustomLeaky(snn.Leaky):
         )
 
     def cluster_neurons_simple(self, spk, factor=0.01):
-        # TODO verify that this works
         """Looks at all neurons that fired in spk (can be a timestep or whole batch) and moves them closer to each other."""
-        # get indices of neurons that fired
-        fired_indices = torch.nonzero(spk, as_tuple=True)
-
         # get sum of spk over batch dimension
         spk_sum = torch.sum(spk, dim=0)
+        avg_spk_sum = torch.mean(spk_sum)
 
-        # TODO spk shape is always [batch size, num_neurons of next layer]
-        # fired_indices[0].shape == fired_indices[1].shape
-        if len(fired_indices[0]) == 0:
+        # Plot initial coordinates
+        self.plot_coordinates(spk_sum=spk_sum, title="Initial Coordinates")
+
+        # get indices of neurons that fired
+        fired_indices = torch.nonzero(spk_sum).squeeze()
+
+        if fired_indices.numel() == 0:
             return  # skip clustering
 
-        fired_coordinates = self.coordinates[fired_indices[1]]
+        fired_coordinates = self.coordinates[fired_indices]
 
         # move each neuron that fired (factor*spk_sum[neuron coordinates]) closer to the average of all neurons that fired
-        self.coordinates[fired_indices[1]] += factor * spk_sum[fired_indices[1]].reshape(
-            -1, 1
-        ) * (torch.mean(fired_coordinates, dim=0) - fired_coordinates)
+        self.coordinates[fired_indices] += (
+            factor
+            * spk_sum[fired_indices].reshape(-1, 1)
+            * (torch.mean(fired_coordinates, dim=0) - fired_coordinates)
+        )
 
         # move all neurons away from the center by the average amount that they moved towards the center
         center = torch.mean(self.coordinates, dim=0)
-        self.coordinates += factor * (center - self.coordinates) * spk_sum.shape[0]
+        self.coordinates += factor * (center - self.coordinates) * avg_spk_sum
 
 
     # TODO build this:
