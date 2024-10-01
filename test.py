@@ -2,21 +2,23 @@
 # TODO: Array übertragen in json
 # TODO: weight matrices ==layer_connections in NetworkRepresentation
 import torch
-from utils import visualize_neuron_positions
+from utils import visualize_neuron_positions, visualize_heatmaps
+from network_representation import NetworkRepresentation
 import numpy as np
 
 import torch
 import matplotlib.pyplot as plt
 
 
-def test(net, test_loader, device):
+def test(net, test_loader, device, max_steps=None):
     total = 0
     correct = 0
 
     with torch.no_grad():
         net.eval()
-        net.set_record_heatmap(True)  # Enable heatmap recording
+        net.record_heatmap = True
         for data, targets in test_loader:
+
             data = data.to(device)
             targets = targets.to(device)
 
@@ -26,34 +28,61 @@ def test(net, test_loader, device):
             total += targets.size(0)
             correct += (predicted == targets).sum().item()
 
+            net.record_heatmap = False
 
-            net.set_record_heatmap(False)
+    layers, weight_matrices, heatmaps = net.export_model_structure()
+    network_representation = NetworkRepresentation(layers, weight_matrices, heatmaps)
 
     visualize_neuron_positions(net)
+    visualize_heatmaps(heatmaps)
+
+    network_representation.export_representation("network_representation.json")
 
     return total, correct
 
 
-def visualize_neuron_positions(net):
-    coordinates = net.lif1.coordinates.detach().numpy()
-    plt.scatter(coordinates[:, 0], coordinates[:, 1])
-    plt.show()
-    # for debugging: visualize the neuron positions (2D continuous space)
-    visualize_neuron_positions(net)
-    return 
+import torch
 
-def record(net, test_loader, device, max_steps=None):
-    # TODO build function that records spikes for N steps
-    pass
+
+def record(net, test_loader, device, record_batches=None):
+    with torch.no_grad():
+        net.eval()
+        net.record_spike_times = True
+        batch_count = 0 
+
+        for data, targets in test_loader:
+            if record_batches is not None and batch_count >= record_batches:
+                break  # Stop recording after record_batches
+
+            data = data.to(device)
+            targets = targets.to(device)
+
+            _, _ = net(data.view(data.size(0), -1))
+
+            batch_count += 1 
+
+        print("Recorded spike times for ", batch_count, " batches.")
+        net.record_heatmap = False
+
+    layers, weight_matrices, heatmaps = net.export_model_structure()
+    network_representation = NetworkRepresentation(layers, weight_matrices, heatmaps)
+
+    # Debugging:
+    heatmaps = network_representation.heatmaps
+    visualize_neuron_positions(net)
+    visualize_heatmaps(heatmaps)
+
+    activations = net.get_activations()  # Call the method to get activations
+    network_representation.export_activations(activations, "network_activations.json")
+
 
 def cluster_simple(net, test_loader, device, max_steps=None):
-    # TODO build function that performs the naive clustering algorithm
     with torch.no_grad():
         net.eval()
         net.set_cluster_simple(True)
 
-        #print("Clustering for ", np.max(max_steps, len(enumerate(test_loader))), " steps.")
-        
+        # print("Clustering for ", np.max(max_steps, len(enumerate(test_loader))), " steps.")
+
         for step, (data, targets) in enumerate(test_loader):
             if max_steps is not None and step >= max_steps:
                 break

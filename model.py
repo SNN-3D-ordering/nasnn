@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from custom_neurons import CustomLeaky
 from network_representation import NetworkRepresentation
+from utils import generate_square_grid_ascending
 
 
 class Net(nn.Module):
@@ -13,9 +14,11 @@ class Net(nn.Module):
         self.testing = False # TODO remove
         self.record_heatmap = False
         self.heatmaps = []
+        self.activations = [] # TODO rename heatmaps/activations to something better
         self.cluster_simple = False
         self.record_spike_times = False
 
+        self.input_grid = generate_square_grid_ascending(num_inputs)
         self.fc1 = nn.Linear(num_inputs, num_hidden)
         self.lif1 = CustomLeaky(beta=beta, input_size=num_hidden)
         self.fc2 = nn.Linear(num_hidden, num_outputs)
@@ -27,12 +30,18 @@ class Net(nn.Module):
         mem2 = self.lif2.init_leaky()
 
         # Record heatmaps
-        # Record heatmaps
         if self.record_heatmap:
+            heatmap0 = torch.zeros((self.fc1.in_features,), device=x.device)
+            self.heatmaps.append(heatmap0)
             heatmap1 = torch.zeros((self.fc1.out_features,), device=x.device)
             self.heatmaps.append(heatmap1)
             heatmap2 = torch.zeros((self.fc2.out_features,), device=x.device)
             self.heatmaps.append(heatmap2)
+
+        if self.record_spike_times:
+            activations0 = []
+            activations1 = []
+            activations2 = []
 
         # Record the final layer
         spk2_rec = []
@@ -44,54 +53,63 @@ class Net(nn.Module):
             cur1 = self.fc1(x)
             spk1, mem1 = self.lif1(cur1, mem1, self.current_step, self.fc1.weight.t())
 
-            #if self.testing:
-            #    self.lif1.update_connections(spk1, x, self.fc1.weight.t())
-
-            if self.record_heatmap:
-                heatmap1 += spk1.sum(dim=0)
-
             cur2 = self.fc2(spk1)
             spk2, mem2 = self.lif2(cur2, mem2, self.current_step, self.fc2.weight.t())
 
-            #if self.testing:
-            #    self.lif2.update_connections(spk2, spk1, self.fc2.weight.t())
-
             if self.record_heatmap:
+                heatmap0 += x.sum(dim=0)
+                heatmap1 += spk1.sum(dim=0)
                 heatmap2 += spk2.sum(dim=0)
+
+            if self.record_spike_times:
+                activations0 += x.sum(dim=0)
+                activations1 += spk1.sum(dim=0)
+                activations2 += spk2.sum(dim=0)
 
             spk2_rec.append(spk2)
             mem2_rec.append(mem2)
 
         if self.record_heatmap:
-            self.heatmaps[0] += heatmap1
-            self.heatmaps[1] += heatmap2
+            self.heatmaps[0] += heatmap0
+            self.heatmaps[1] += heatmap1
+            self.heatmaps[2] += heatmap2
+    
+        if self.record_spike_times:
+            self.activations.append([activations0, activations1, activations2])
 
         return torch.stack(spk2_rec), torch.stack(mem2_rec)
     
-    def return_heatmaps(self):
-        return self.heatmaps
+    def export_model_structure(self):
+        """Returns all spiking layers as 2d grids and weight matrices of fully connected layers.
 
-    def export_network_representation(self):
-        # Instantiate NetworkRepresentation
-        network_representation = NetworkRepresentation()
+        Returns:
+            list, list: list of 2d grids, list of weight matrices
+        """
+        layers = [self.input_grid]
+        weight_matrices = []
+        heatmaps = self.heatmaps
 
-        # Get all CustomLeaky layers
-        layers = []
         for module in self.modules():
             if isinstance(module, CustomLeaky):
-                layers.append(module)
+                layers.append(module.return_2d_grid())
+            elif isinstance(module, nn.Linear):
+                weight_matrices.append(module.weight.data)
 
-        # Export list of 2D grids and connections
-        for layer_idx, layer in enumerate(layers):
-            network_representation.add_layer(layer.return_2d_grid())
+        return layers, weight_matrices, heatmaps
+    
+    def get_activations(self):
+        """Returns activations of all spiking layers.
 
-            connections = layer.return_connections()  # TODO is empty dict
-            for neuron_i, neuron_j in connections:
-                network_representation.add_connection(layer_idx, neuron_i, neuron_j)
-
-        return network_representation
+        Returns:
+            list: list of activations
+        """
+        return self.activations
 
     def set_cluster_simple(self, cluster_simple):
+        """Sets the cluster_simple attribute of all CustomLeaky layers."""
         for module in self.modules():
             if isinstance(module, CustomLeaky):
-                module.set_cluster_simple(True)
+                module.set_cluster_simple(cluster_simple)
+
+
+        

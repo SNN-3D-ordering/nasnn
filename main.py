@@ -3,7 +3,8 @@ import yaml
 from model import Net
 from data import get_data_loaders
 from train import train_model
-from test import test, cluster_simple
+from test import test, cluster_simple, record
+from utils import get_next_square_numbers
 import matplotlib.pyplot as plt
 import argparse
 from network_representation import NetworkRepresentation
@@ -12,7 +13,6 @@ from network_representation import NetworkRepresentation
 parser = argparse.ArgumentParser(description="Train or evaluate the model.")
 parser.add_argument("--train", "-t", action="store_true", help="Flag to run training")
 parser.add_argument("--eval", "-e", action="store_true", help="Flag to run evaluation")
-parser.add_argument("--presort", "-p", action="store_true", help="Flag to presort the neurons before clustering")
 parser.add_argument(
     "--model-path", type=str, default="model.pth", help="Path to save/load the model"
 )
@@ -24,6 +24,24 @@ with open("config.yaml", "r") as file:
 
 model_params = config["model"]
 training_params = config["training"]
+
+# verify that num_inputs, num_hidden are square numbers
+bigger_num_inputs, smaller_num_inputs = get_next_square_numbers(model_params["num_inputs"])
+bigger_num_hidden, smaller_num_hidden = get_next_square_numbers(model_params["num_hidden"])
+
+if (
+    bigger_num_inputs != model_params["num_inputs"]
+    or bigger_num_hidden != model_params["num_hidden"]
+):
+    print(
+        f"Some model parameters were not square numbers. Consider adjusting to the next bigger or smaller square numbers to avoid padding:"
+    )
+    if bigger_num_inputs != model_params["num_inputs"]:
+        print(f"num_inputs: {model_params['num_inputs']} -> {bigger_num_inputs} or {smaller_num_inputs}")
+
+    if bigger_num_hidden != model_params["num_hidden"]:
+        print(f"num_hidden: {model_params['num_hidden']} -> {bigger_num_hidden} or {smaller_num_hidden}")
+
 
 # Initialize data loaders
 train_loader, test_loader = get_data_loaders(
@@ -77,19 +95,19 @@ if args.eval:
     net.load_state_dict(torch.load(args.model_path))
 
     # Evaluate model
-    total, correct = test(net, test_loader, device, max_steps=1000)
+    total, correct = test(net, test_loader, device)
     print(f"Accuracy: {correct/total*100:.2f}%")
+
+    # Run simple clustering
     print("Clustering...")
     cluster_simple(net, test_loader, device, max_steps=1000)
+
+    # Record spike times for 100 batches
+    print("Recording spike times...")
+    record(net, test_loader, device, record_batches=10)
 
 if not args.train and not args.eval:
     print("Please specify either --train/-t or --eval/-e flag.")
 
-# get all layers
-network_representation = net.export_network_representation()
-
-# debugging: print the network representation
-print(network_representation.layers)
-print(network_representation.layer_connections)
 
 
