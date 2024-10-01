@@ -73,8 +73,8 @@ def get_next_square_numbers(number):
 
 def convert_layer_size_to_grid_size(layer_size):
     sqrt_layer_size = int(np.ceil(np.sqrt(layer_size)))
-    # Verify that sqert_layer_size^2 >= layer_size
-    if sqrt_layer_size * sqrt_layer_size < layer_size:
+    # Verify that sqrt_layer_size^2 >= layer_size
+    if sqrt_layer_size**2 < layer_size:
         raise ValueError("Layer size is not a square number")
     return sqrt_layer_size, sqrt_layer_size
 
