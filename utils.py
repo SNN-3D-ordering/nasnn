@@ -57,6 +57,20 @@ def map_to_2d_grid_row_wise(coordinates, grid_size):
     return grid
 
 
+def get_next_square_numbers(number):
+    """
+    Returns the two closest square numbers to the given number (larger square, smaller square).
+    """
+
+    square_ceil = int(np.ceil(np.sqrt(number))) ** 2
+    square_floor = int(np.floor(np.sqrt(number))) ** 2
+
+    if square_ceil == number:
+        return square_ceil, square_ceil
+
+    return square_ceil, square_floor
+
+
 def convert_layer_size_to_grid_size(layer_size):
     sqrt_layer_size = int(np.ceil(np.sqrt(layer_size)))
     # Verify that sqert_layer_size^2 >= layer_size
@@ -90,18 +104,18 @@ def visualize_heatmaps(heatmaps):
 def visualize_tensor(tensor):
     # Convert tensor to numpy array
     values = tensor.detach().numpy()
-    
+
     # Sort values for better visualization
     values = np.sort(values)
 
     # Create a bar chart
     plt.bar(range(len(values)), values)
-    
+
     # Add labels and title
-    plt.xlabel('Index')
-    plt.ylabel('Value')
-    plt.title('Tensor Values')
-    
+    plt.xlabel("Index")
+    plt.ylabel("Value")
+    plt.title("Tensor Values")
+
     # Show the plot
     plt.show()
 
