@@ -3,17 +3,51 @@ from tqdm import tqdm
 
 
 def index_to_coord(index, grid_shape):
-    """Convert a linear index to 2D coordinates (row, col) in a grid of given shape."""
+    """
+    Convert a linear index to 2D coordinates (row, col) in a grid of given shape.
+
+    Args:
+        index (int): The linear index to be converted.
+        grid_shape (tuple): The shape of the grid as (rows, cols).
+
+    Returns:
+        tuple: A tuple representing the 2D coordinates (row, col).
+    """
     rows, cols = grid_shape
     return divmod(index, cols)
 
 
 def manhattan_distance_2d(coord1, coord2):
-    """Calculate the Manhattan distance in a 2D grid given two coordinates."""
+    """
+    Calculate the Manhattan distance in a 2D grid given two coordinates.
+
+    Args:
+        coord1 (tuple): The (row, col) coordinates of the first point.
+        coord2 (tuple): The (row, col) coordinates of the second point.
+
+    Returns:
+        int: The Manhattan distance between the two points.
+    """
     return abs(coord1[0] - coord2[0]) + abs(coord1[1] - coord2[1])
 
 
 def calculate_distance_between_layers(data, layer_idx):
+    """
+    Calculate the weighted Manhattan distance between two consecutive layers in a network.
+
+    Args:
+        data (dict): The network data loaded from the JSON file, containing heatmaps, weight
+                     matrices, and layer dimensions.
+        layer_idx (int): The index of the current layer for which to calculate the distance
+                         to the next layer.
+
+    Returns:
+        int: The computed weighted Manhattan distance between the current layer and the next layer.
+
+    Raises:
+        ValueError: If the dimensions of the weight matrix do not match the number of neurons in the
+                    current and next layers.
+    """
     heatmaps = data["heatmaps"]
     weight_matrices = data["weight_matrices"]
     layer_shapes = data["metadata"]["layer_dimensions"]
@@ -48,7 +82,7 @@ def calculate_distance_between_layers(data, layer_idx):
             f"but got: ({len(weight_matrix)}, {len(weight_matrix[0]) if weight_matrix else 0})"
         )
 
-    # Calculate offsets to center grids
+    # Calculate offsets to center grids in order to align the layers by their centers
     offset_current_to_next = (
         (current_shape[0] - next_shape[0]) // 2,
         (current_shape[1] - next_shape[1]) // 2,
@@ -98,6 +132,16 @@ def calculate_distance_between_layers(data, layer_idx):
 
 
 def calculate_total_distance(data):
+    """
+    Calculate the total weighted Manhattan distance for the entire network.
+
+    Args:
+        data (dict): The network data loaded from the JSON file, containing heatmaps,
+                     weight matrices, and layer dimensions.
+
+    Returns:
+        int: The total weighted Manhattan distance for the entire network.
+    """
     num_layers = data["metadata"]["num_layers"]
     total_distance = 0
 
