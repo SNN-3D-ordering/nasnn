@@ -90,5 +90,8 @@ def cluster_simple(net, test_loader, device, max_steps=None):
 
             _, _ = net(data.view(data.size(0), -1))
 
-        visualize_neuron_positions_color(net.lif1)
+        if net.heatmaps is not None:
+            visualize_neuron_positions_color(net.lif1, spk_sum=net.heatmaps[1])
+        else:
+            visualize_neuron_positions_color(net.lif1)
         return None
