@@ -18,16 +18,20 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-# Load configuration
-with open("config.yaml", "r") as file:
+config_filepath = "data/config.yaml"
+with open(config_filepath, "r") as file:
     config = yaml.safe_load(file)
 
 model_params = config["model"]
 training_params = config["training"]
 
 # verify that num_inputs, num_hidden are square numbers
-bigger_num_inputs, smaller_num_inputs = get_next_square_numbers(model_params["num_inputs"])
-bigger_num_hidden, smaller_num_hidden = get_next_square_numbers(model_params["num_hidden"])
+bigger_num_inputs, smaller_num_inputs = get_next_square_numbers(
+    model_params["num_inputs"]
+)
+bigger_num_hidden, smaller_num_hidden = get_next_square_numbers(
+    model_params["num_hidden"]
+)
 
 if (
     bigger_num_inputs != model_params["num_inputs"]
@@ -37,10 +41,14 @@ if (
         f"Some model parameters were not square numbers. Consider adjusting to the next bigger or smaller square numbers to avoid padding:"
     )
     if bigger_num_inputs != model_params["num_inputs"]:
-        print(f"num_inputs: {model_params['num_inputs']} -> {bigger_num_inputs} or {smaller_num_inputs}")
+        print(
+            f"num_inputs: {model_params['num_inputs']} -> {bigger_num_inputs} or {smaller_num_inputs}"
+        )
 
     if bigger_num_hidden != model_params["num_hidden"]:
-        print(f"num_hidden: {model_params['num_hidden']} -> {bigger_num_hidden} or {smaller_num_hidden}")
+        print(
+            f"num_hidden: {model_params['num_hidden']} -> {bigger_num_hidden} or {smaller_num_hidden}"
+        )
 
 
 # Initialize data loaders
@@ -80,7 +88,7 @@ if args.train:
     )
 
     # Save the trained model
-    torch.save(net.state_dict(), args.model_path)
+    torch.save(net.state_dict(), config["model_filepath"])
 
     # Plot the loss curves
     fig = plt.figure(facecolor="w", figsize=(10, 5))
@@ -92,10 +100,10 @@ if args.train:
 
 if args.eval:
     # Load the trained model
-    net.load_state_dict(torch.load(args.model_path))
+    net.load_state_dict(torch.load(config["model_filepath"]))
 
     # Evaluate model
-    total, correct = test(net, test_loader, device)
+    total, correct = test(net, test_loader, device, config)
     print(f"Accuracy: {correct/total*100:.2f}%")
 
     # Run simple clustering
@@ -103,11 +111,8 @@ if args.eval:
     cluster_simple(net, test_loader, device, max_steps=1000)
 
     # Record spike times for 100 batches
-    #print("Recording spike times...")
-    #record(net, test_loader, device, record_batches=10)
+    # print("Recording spike times...")
+    # record(net, test_loader, device, config, record_batches=10)
 
 if not args.train and not args.eval:
     print("Please specify either --train/-t or --eval/-e flag.")
-
-
-

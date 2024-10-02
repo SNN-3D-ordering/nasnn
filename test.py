@@ -10,7 +10,7 @@ import torch
 import matplotlib.pyplot as plt
 
 
-def test(net, test_loader, device, max_steps=None):
+def test(net, test_loader, device, config, max_steps=None):
     total = 0
     correct = 0
 
@@ -34,9 +34,10 @@ def test(net, test_loader, device, max_steps=None):
     network_representation = NetworkRepresentation(layers, weight_matrices, heatmaps)
 
     visualize_neuron_positions_color(net.lif1)
-    #visualize_heatmaps(heatmaps)
+    # visualize_heatmaps(heatmaps)
 
-    network_representation.export_representation("network_representation.json")
+    export_filepath = config["network_representation_filepath"]
+    network_representation.export_representation(export_filepath)
 
     return total, correct
 
@@ -44,11 +45,11 @@ def test(net, test_loader, device, max_steps=None):
 import torch
 
 
-def record(net, test_loader, device, record_batches=None):
+def record(net, test_loader, device, config, record_batches=None):
     with torch.no_grad():
         net.eval()
         net.record_spike_times = True
-        batch_count = 0 
+        batch_count = 0
 
         for data, targets in test_loader:
             if record_batches is not None and batch_count >= record_batches:
@@ -59,7 +60,7 @@ def record(net, test_loader, device, record_batches=None):
 
             _, _ = net(data.view(data.size(0), -1))
 
-            batch_count += 1 
+            batch_count += 1
 
         print("Recorded spike times for ", batch_count, " batches.")
         net.record_heatmap = False
@@ -72,8 +73,12 @@ def record(net, test_loader, device, record_batches=None):
     visualize_neuron_positions_color(net.lif1)
     visualize_heatmaps(heatmaps)
 
-    activations = net.get_activations()  # Call the method to get activations
-    network_representation.export_activations(activations, "network_activations.json")
+    activations = (
+        net.get_activations()
+    )  # Call the method to get activations #TODO get these within export_activations
+
+    export_filepath = config["network_activations_filepath"]
+    network_representation.export_activations(activations, export_filepath)
 
 
 def cluster_simple(net, test_loader, device, max_steps=None):
