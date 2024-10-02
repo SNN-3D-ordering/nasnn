@@ -1,34 +1,6 @@
 import json
 from tqdm import tqdm
-
-
-def index_to_coord(index, grid_shape):
-    """
-    Convert a linear index to 2D coordinates (row, col) in a grid of given shape.
-
-    Args:
-        index (int): The linear index to be converted.
-        grid_shape (tuple): The shape of the grid as (rows, cols).
-
-    Returns:
-        tuple: A tuple representing the 2D coordinates (row, col).
-    """
-    rows, cols = grid_shape
-    return divmod(index, cols)
-
-
-def manhattan_distance_2d(coord1, coord2):
-    """
-    Calculate the Manhattan distance in a 2D grid given two coordinates.
-
-    Args:
-        coord1 (tuple): The (row, col) coordinates of the first point.
-        coord2 (tuple): The (row, col) coordinates of the second point.
-
-    Returns:
-        int: The Manhattan distance between the two points.
-    """
-    return abs(coord1[0] - coord2[0]) + abs(coord1[1] - coord2[1])
+from utils import index_to_coord, manhattan_distance_2d
 
 
 def calculate_distance_between_layers(data, layer_idx):
@@ -156,10 +128,25 @@ def calculate_total_distance(data):
     return total_distance
 
 
-# Load the JSON data from the file
-with open("network_representation.json", "r") as f:
-    data = json.load(f)
+def measure_network(filepath):
+    """
+    Measure the total weighted Manhattan distance for the entire network.
 
-# Calculate the total Manhattan distance for the network
-total_distance = calculate_total_distance(data)
-print(f"Total weighted Manhattan distance for the entire network: {total_distance}")
+    Args:
+        filepath (str): The path to the JSON file containing the network representation.
+
+    Returns:
+        int: The total weighted Manhattan distance for the entire network.
+    """
+    # Load the JSON data from the file
+    with open(filepath, "r") as f:
+        data = json.load(f)
+
+    # Calculate the total Manhattan distance for the network
+    total_distance = calculate_total_distance(data)
+    return total_distance
+
+
+if __name__ == "__main__":
+    total_distance = measure_network("network_representation.json")
+    print(f"Total weighted Manhattan distance for the entire network: {total_distance}")
