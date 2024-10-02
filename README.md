@@ -1,5 +1,5 @@
-# sosnn
-_A self-ordering spiking neural network. Part of a project for the seminar "Diving into Neuromorphic Computing", summer semester of 2024, University of Osnabrück_
+# nasnn
+_A neuron-arranging spiking neural network, an alternative neuron-arranging algorithm, and a spike distance metric for the whole network. Part of a project for the seminar "Diving into Neuromorphic Computing", summer semester of 2024, University of Osnabrück_
 
 ## Installation
 To install and run this project, follow these steps:
