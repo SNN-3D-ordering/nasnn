@@ -1,6 +1,7 @@
 # an algorithm to reduce the total manhattan distance between neurons in the entire network
 import yaml
 import numpy as np
+from utils import get_next_square_numbers
 
 config_filepath = "data/config.yaml"
 with open(config_filepath, "r") as file:
@@ -94,6 +95,16 @@ def align_layer_sizes(rank_maps):
     return padded_rank_maps
 
 
+def unpad_layer(rank_map):
+    # remove the -1 padding
+    rank_map = rank_map[rank_map != -1]
+    # add new -1s to make the rank_map square
+    next_square = get_next_square_numbers(rank_map.size)[0]
+    rank_map = np.pad(
+        rank_map, (0, next_square - rank_map.size), mode="constant", constant_values=-1
+    )
+
+
 def simulated_annealing(rank_map1, rank_map2, kernel_size=3):
     # TODO verify implementation
     # initialize the temperature
@@ -145,6 +156,10 @@ def reduce_distance(config):
     # reduce the distance between the layers
     for i in range(len(rank_maps) - 1):
         rank_maps[i + 1] = simulated_annealing(rank_maps[i], rank_maps[i + 1])
+
+    # unpad layers
+    for i in range(len(rank_maps)):
+        rank_maps[i] = unpad_layer(rank_maps[i])
 
     return rank_maps
 
