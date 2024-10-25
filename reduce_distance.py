@@ -1,7 +1,7 @@
 # an algorithm to reduce the total manhattan distance between neurons in the entire network
 import yaml
 import numpy as np
-from utils import get_next_square_numbers
+from utils import make_2d_grid_from_1d_list
 
 config_filepath = "data/config.yaml"
 with open(config_filepath, "r") as file:
@@ -12,8 +12,6 @@ def generate_rank_map(heatmap, epsilon=1e-5):
     """
     Generate a rank map from the input heatmap.
     """
-
-    heatmap = heatmap.flatten()
     sorted_indices = np.argsort(heatmap)
     rank_map = np.zeros_like(heatmap, dtype=int)
 
@@ -30,40 +28,48 @@ def generate_rank_map(heatmap, epsilon=1e-5):
             current_rank += 1
         rank_map[sorted_indices[i]] = current_rank
 
-    # Reshape to original shape
-    input_rank_map = rank_map.reshape(heatmap.shape)
+    # Make square
+    rank_map = make_2d_grid_from_1d_list(rank_map)
 
-    return input_rank_map
+    return rank_map
 
 
 def generate_rank_representation(config):
+    # load file
     filepaths = config["filepaths"]
     network_representation_filepath = filepaths["network_representation_filepath"]
     with open(network_representation_filepath, "r") as file:
         network_representation = yaml.safe_load(file)
 
     rank_maps = []
+
     # for the input layer: generate a rank map from the heatmap
     input_heatmap = network_representation["heatmaps"][0]
     input_heatmap = np.array(input_heatmap)
     input_rank_map = generate_rank_map(input_heatmap)
     rank_maps.append(input_rank_map)
 
-    # for each further layer, use the non-0 weights of the connecting layer as mask
+    # for each further layer, use the non-0 weights of the previous connecting layer as mask
     # (this decreases the weight of poorly connected neurons) 
-
-
     for i in range(len(network_representation["heatmaps"][1:])):
-        weight_matrix = np.array(network_representation["weight_matrices"][i-1])
+        #weight_matrix = np.array(network_representation["weight_matrices"][i])
         heatmap = np.array(network_representation["heatmaps"][i])
 
         # mask the heatmap with the previous weight matrix
-        binary_weight_matrix = weight_matrix != 0
-        masked_heatmap = heatmap * binary_weight_matrix
+        #upper_triangular_mask = np.triu(np.ones_like(weight_matrix))
+        #binary_weight_matrix = (weight_matrix != 0) * upper_triangular_mask
 
-        rank_map = generate_rank_map(masked_heatmap)
+        # debugging: how much of the binary matrix is 1?
+        # print(np.sum(binary_weight_matrix)/binary_weight_matrix.size)
+  
+        #masked_heatmap = heatmap * binary_weight_matrix
+
+        #rank_map = generate_rank_map(masked_heatmap)
+        rank_map = generate_rank_map(heatmap)
         rank_maps.append(rank_map)
 
+    # TODO normalize ranks
+    
     return rank_maps
 
 
@@ -132,11 +138,8 @@ def align_layer_sizes(rank_maps):
 def unpad_layer(rank_map):
     # remove the -1 padding
     rank_map = rank_map[rank_map != -1]
-    # add new -1s to make the rank_map square
-    next_square = get_next_square_numbers(rank_map.size)[0]
-    rank_map = np.pad(
-        rank_map, (0, next_square - rank_map.size), mode="constant", constant_values=-1
-    )
+    # add new -1s to make the rank_map square TODO make this 
+    rank_map = make_2d_grid_from_1d_list(rank_map)
 
 
 def simulated_annealing(rank_map1, rank_map2, kernel_size=3):
