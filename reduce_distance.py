@@ -8,6 +8,34 @@ with open(config_filepath, "r") as file:
     config = yaml.safe_load(file)
 
 
+def generate_rank_map(heatmap, epsilon=1e-5):
+    """
+    Generate a rank map from the input heatmap.
+    """
+
+    heatmap = heatmap.flatten()
+    sorted_indices = np.argsort(heatmap)
+    rank_map = np.zeros_like(heatmap, dtype=int)
+
+    # Assign ranks with epsilon
+    current_rank = 0
+    for i in range(len(sorted_indices)):
+        if (
+            i > 0
+            and abs(
+                heatmap[sorted_indices[i]] - heatmap[sorted_indices[i - 1]]
+            )
+            > epsilon
+        ):
+            current_rank += 1
+        rank_map[sorted_indices[i]] = current_rank
+
+    # Reshape to original shape
+    input_rank_map = rank_map.reshape(heatmap.shape)
+
+    return input_rank_map
+
+
 def generate_rank_representation(config):
     filepaths = config["filepaths"]
     network_representation_filepath = filepaths["network_representation_filepath"]
@@ -15,20 +43,25 @@ def generate_rank_representation(config):
         network_representation = yaml.safe_load(file)
 
     rank_maps = []
-    # for the input layer:
-    input_layer = network_representation["layers"][0]
-    input_heatmap = input_layer["heatmap"]
-    input_rank_map = np.argsort(np.argsort(input_heatmap, axis=None)).reshape(
-        input_heatmap.shape
-    )
+    # for the input layer: generate a rank map from the heatmap
+    input_heatmap = network_representation["heatmaps"][0]
+    input_heatmap = np.array(input_heatmap)
+    input_rank_map = generate_rank_map(input_heatmap)
     rank_maps.append(input_rank_map)
 
-    # for each further layer, use the non-0 weights as mask TODO verify functionality
-    for layer in network_representation["layers"][1:]:
-        weight_matrix = layer["weight_matrix"]
-        weight_matrix_binary = (weight_matrix != 0).astype(int)
-        heatmap = np.multiply(input_heatmap, weight_matrix_binary)
-        rank_map = np.argsort(np.argsort(heatmap, axis=None)).reshape(heatmap.shape)
+    # for each further layer, use the non-0 weights of the connecting layer as mask
+    # (this decreases the weight of poorly connected neurons) 
+
+
+    for i in range(len(network_representation["heatmaps"][1:])):
+        weight_matrix = np.array(network_representation["weight_matrices"][i-1])
+        heatmap = np.array(network_representation["heatmaps"][i])
+
+        # mask the heatmap with the previous weight matrix
+        binary_weight_matrix = weight_matrix != 0
+        masked_heatmap = heatmap * binary_weight_matrix
+
+        rank_map = generate_rank_map(masked_heatmap)
         rank_maps.append(rank_map)
 
     return rank_maps
