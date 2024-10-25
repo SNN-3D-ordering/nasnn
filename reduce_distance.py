@@ -9,7 +9,8 @@ with open(config_filepath, "r") as file:
 
 
 def generate_rank_representation(config):
-    network_representation_filepath = config["network_representation_filepath"]
+    filepaths = config["filepaths"]
+    network_representation_filepath = filepaths["network_representation_filepath"]
     with open(network_representation_filepath, "r") as file:
         network_representation = yaml.safe_load(file)
 
@@ -22,7 +23,7 @@ def generate_rank_representation(config):
     )
     rank_maps.append(input_rank_map)
 
-    # for each further layer:
+    # for each further layer, use the non-0 weights as mask TODO verify functionality
     for layer in network_representation["layers"][1:]:
         weight_matrix = layer["weight_matrix"]
         weight_matrix_binary = (weight_matrix != 0).astype(int)
@@ -62,7 +63,7 @@ def intersperse_pad_array(array, target_size, pad_value=-1):
     rows, cols = array.shape
     target_rows, target_cols = target_size
 
-    # Sanity checks
+    # only operate if the first map is smaller
     if (rows, cols) == (target_rows, target_cols):
         return array
     elif rows > target_rows or cols > target_cols:
