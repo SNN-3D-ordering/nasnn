@@ -44,6 +44,27 @@ def train_printer(
     print("\n")
 
 
+def make_2d_grid_from_1d_list(list_1d):
+    """
+    Makes a 2d grid from a 1d list by padding with -1.
+
+    Args:
+        list_1d (list): list to convert to 2d grid
+
+    Returns:
+        np.array: 2d grid, square, padded with -1 if necessary
+    """
+    if not isinstance(list_1d, np.ndarray):
+        list_1d = np.array(list_1d)
+
+    next_square = get_next_square_numbers(list_1d.size)[0]
+    grid_2d = np.pad(
+        list_1d, (0, next_square - list_1d.size), mode="constant", constant_values=-1
+    )
+    
+    return grid_2d.reshape(int(np.sqrt(next_square)), int(np.sqrt(next_square)))
+
+
 def map_to_2d_grid_row_wise(coordinates, grid_size):
     """
     Maps 2D coordinates to a 2D grid.
