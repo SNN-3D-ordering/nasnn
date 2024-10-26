@@ -39,28 +39,7 @@ def generate_rank_representation(config):
 
     rank_maps = []
 
-    # for the input layer: generate a rank map from the heatmap
-    input_heatmap = network_representation["heatmaps"][0]
-    input_heatmap = np.array(input_heatmap)
-    input_rank_map = generate_rank_map(input_heatmap)
-    rank_maps.append(input_rank_map)
-
-    # for each further layer, use the non-0 weights of the previous connecting layer as mask
-    # (this decreases the weight of poorly connected neurons) 
-    for i in range(len(network_representation["heatmaps"][1:])):
-        #weight_matrix = np.array(network_representation["weight_matrices"][i])
-        heatmap = np.array(network_representation["heatmaps"][i])
-
-        # mask the heatmap with the previous weight matrix
-        #upper_triangular_mask = np.triu(np.ones_like(weight_matrix))
-        #binary_weight_matrix = (weight_matrix != 0) * upper_triangular_mask
-
-        # debugging: how much of the binary matrix is 1?
-        # print(np.sum(binary_weight_matrix)/binary_weight_matrix.size)
-  
-        #masked_heatmap = heatmap * binary_weight_matrix
-
-        #rank_map = generate_rank_map(masked_heatmap)
+    for heatmap in network_representation["heatmaps"]:
         rank_map = generate_rank_map(heatmap)
         rank_maps.append(rank_map)
 
@@ -115,6 +94,35 @@ def intersperse_pad_array(array, target_size, pad_value=-1):
             new_array[row, col] = array[i, j]
 
     return new_array
+
+
+def consecutive_padding_amount(array, pad_value=-1):
+    """Calculate the maximum number of consecutive padded values"""
+    max_consecutive_pads = 0
+
+    # Check rows for consecutive padded values
+    for row in array:
+        current_consecutive_pads = 0
+        for value in row:
+            if value == pad_value:
+                current_consecutive_pads += 1
+                if current_consecutive_pads > max_consecutive_pads:
+                    max_consecutive_pads = current_consecutive_pads
+            else:
+                current_consecutive_pads = 0
+
+    # Check columns for consecutive padded values
+    for col in array.T:
+        current_consecutive_pads = 0
+        for value in col:
+            if value == pad_value:
+                current_consecutive_pads += 1
+                if current_consecutive_pads > max_consecutive_pads:
+                    max_consecutive_pads = current_consecutive_pads
+            else:
+                current_consecutive_pads = 0
+
+    return max_consecutive_pads
 
 
 def align_layer_sizes(rank_maps):
@@ -186,7 +194,11 @@ def simulated_annealing(rank_map1, rank_map2, kernel_size=3):
 def reduce_distance(config):
     rank_maps = generate_rank_representation(config)
     rank_maps = align_layer_sizes(rank_maps)
+    max_consecutive_pads = max([consecutive_padding_amount(rank_map) for rank_map in rank_maps])
 
+    print("amount of rank maps:", len(rank_maps))
+    print("shapes of rank maps:", rank_maps[0].shape, rank_maps[1].shape, rank_maps[2].shape)
+    print("max consecutive pads:", max_consecutive_pads)
     for map in rank_maps:
         print(map)
 
@@ -196,7 +208,7 @@ def reduce_distance(config):
         print("Simulated Annealing between layers", i, "and", i + 1)
         print("Current score:", compute_similarity_score(rank_maps[i], rank_maps[i + 1]))
         print("current score kernel:", compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]))
-        rank_maps[i + 1] = simulated_annealing(rank_maps[i], rank_maps[i + 1])
+        rank_maps[i + 1] = simulated_annealing(rank_maps[i], rank_maps[i + 1], kernel_size=max_consecutive_pads)
         print("New score:", compute_similarity_score(rank_maps[i], rank_maps[i + 1]))
         print("new score kernel:", compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]))
 
