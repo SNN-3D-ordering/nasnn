@@ -1,0 +1,17 @@
+model:
+  num_inputs: 784
+  num_hidden: 1000
+  num_outputs: 10
+  num_steps: 25
+  beta: 0.95
+
+training:
+  batch_size: 128
+  data_path: "/tmp/data/mnist"
+  dtype: "float"
+  num_epochs: 1
+
+filepaths:
+  model_filepath: "/data/model.pth"
+  network_representation_filepath: "./exports/network_representation.json"
+  network_activations_filepath: "./exports/network_activations.json"
