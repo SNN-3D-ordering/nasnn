@@ -98,7 +98,9 @@ def calculate_distance_between_layers(data, layer_idx):
                 distance = (
                     1 + grid_distance
                 )  # Vertical distance + grid distance, assume the vertical distance between layers is 1
-                layer_distance += current_layer_heatmap[n_idx] * distance
+                layer_distance += (
+                    current_layer_heatmap[n_idx] * distance
+                )  # Neurons that are more active contribute more to the distance
 
     return layer_distance
 

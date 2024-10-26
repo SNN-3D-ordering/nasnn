@@ -16,9 +16,7 @@ def generate_rank_map(heatmap, epsilon=1e-5):
     for i in range(len(sorted_indices)):
         if (
             i > 0
-            and abs(
-                heatmap[sorted_indices[i]] - heatmap[sorted_indices[i - 1]]
-            )
+            and abs(heatmap[sorted_indices[i]] - heatmap[sorted_indices[i - 1]])
             > epsilon
         ):
             current_rank += 1
@@ -43,9 +41,14 @@ def generate_rank_representation(config):
         rank_map = generate_rank_map(heatmap)
         rank_maps.append(rank_map)
 
+    layers = network_representation["layers"]
+
+    for i in range(len(layers)):
+        layers[i] = make_2d_grid_from_1d_list(layers[i])
+
     # TODO normalize ranks
-    
-    return rank_maps
+
+    return rank_maps, layers
 
 
 def compute_similarity_score(rank_map1, rank_map2):
@@ -125,19 +128,17 @@ def consecutive_padding_amount(array, pad_value=-1):
     return max_consecutive_pads
 
 
-def align_layer_sizes(rank_maps):
+def align_layer_sizes(grids):
     # get the size of the largest layer (assuming square arrays)
-    max_layer_size = max([rank_map.shape[0] for rank_map in rank_maps])
+    max_layer_size = max([grid.shape[0] for grid in grids])
 
     # pad the smaller layers with -1
-    padded_rank_maps = []
-    for rank_map in rank_maps:
-        padded_rank_map = intersperse_pad_array(
-            rank_map, (max_layer_size, max_layer_size)
-        )
-        padded_rank_maps.append(padded_rank_map)
+    padded_grids = []
+    for grid in grids:
+        padded_rank_map = intersperse_pad_array(grid, (max_layer_size, max_layer_size))
+        padded_grids.append(padded_rank_map)
 
-    return padded_rank_maps
+    return padded_grids
 
 
 def unpad_layer(rank_map):
@@ -146,8 +147,10 @@ def unpad_layer(rank_map):
     rank_map = rank_map[rank_map != -1]
     rank_map = make_2d_grid_from_1d_list(rank_map)
 
+    return rank_map
 
-def simulated_annealing(rank_map1, rank_map2, kernel_size=3):
+
+def simulated_annealing(rank_map1, rank_map2, layer2, kernel_size=3):
     # TODO verify implementation
     # initialize the temperature
     temperature = 1.0
@@ -165,9 +168,15 @@ def simulated_annealing(rank_map1, rank_map2, kernel_size=3):
     while temperature > temperature_min:
         # generate a new state by shuffling the existing values (select two random positions and swap them)
         new_state = np.copy(current_state)
-        i1, j1 = np.random.randint(0, new_state.shape[0]), np.random.randint(0, new_state.shape[1])
-        i2, j2 = np.random.randint(0, new_state.shape[0]), np.random.randint(0, new_state.shape[1])
+        i1, j1 = np.random.randint(0, new_state.shape[0]), np.random.randint(
+            0, new_state.shape[1]
+        )
+        i2, j2 = np.random.randint(0, new_state.shape[0]), np.random.randint(
+            0, new_state.shape[1]
+        )
         new_state[i1, j1], new_state[i2, j2] = new_state[i2, j2], new_state[i1, j1]
+        # also swap the values in the layer
+        layer2[i1, j1], layer2[i2, j2] = layer2[i2, j2], layer2[i1, j1]
 
         # compute the new score
         new_score = compute_similarity_score_kernel(rank_map1, new_state, kernel_size)
@@ -192,27 +201,46 @@ def simulated_annealing(rank_map1, rank_map2, kernel_size=3):
 
 
 def reduce_distance(config):
-    rank_maps = generate_rank_representation(config)
+    rank_maps, layers = generate_rank_representation(config)
     rank_maps = align_layer_sizes(rank_maps)
-    max_consecutive_pads = max([consecutive_padding_amount(rank_map) for rank_map in rank_maps])
+    layers = align_layer_sizes(layers)
+    max_consecutive_pads = max(
+        [consecutive_padding_amount(rank_map) for rank_map in rank_maps]
+    )
 
     print("amount of rank maps:", len(rank_maps))
-    print("shapes of rank maps:", rank_maps[0].shape, rank_maps[1].shape, rank_maps[2].shape)
+    print(
+        "shapes of rank maps:",
+        rank_maps[0].shape,
+        rank_maps[1].shape,
+        rank_maps[2].shape,
+    )
     print("max consecutive pads:", max_consecutive_pads)
     for map in rank_maps:
         print(map)
 
-    print(type(rank_maps[0]))
     # reduce the distance between the layers
     for i in range(len(rank_maps) - 1):
         print("Simulated Annealing between layers", i, "and", i + 1)
-        print("Current score:", compute_similarity_score(rank_maps[i], rank_maps[i + 1]))
-        print("current score kernel:", compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]))
-        rank_maps[i + 1] = simulated_annealing(rank_maps[i], rank_maps[i + 1], kernel_size=max_consecutive_pads)
+        print(
+            "Current score:", compute_similarity_score(rank_maps[i], rank_maps[i + 1])
+        )
+        print(
+            "current score kernel:",
+            compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]),
+        )
+        rank_maps[i + 1] = simulated_annealing(
+            rank_maps[i],
+            rank_maps[i + 1],
+            layers[i + 1],
+            kernel_size=max_consecutive_pads,
+        )
         print("New score:", compute_similarity_score(rank_maps[i], rank_maps[i + 1]))
-        print("new score kernel:", compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]))
+        print(
+            "new score kernel:",
+            compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]),
+        )
 
-    print(type(rank_maps[0]))
     # unpad layers
     for i in range(len(rank_maps)):
         rank_maps[i] = unpad_layer(rank_maps[i])
@@ -227,4 +255,3 @@ if __name__ == "__main__":
 
     rank_maps = reduce_distance(config)
     print(rank_maps)
-    print(type(rank_maps[0]))
