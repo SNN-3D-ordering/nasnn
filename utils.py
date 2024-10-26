@@ -61,7 +61,7 @@ def make_2d_grid_from_1d_list(list_1d):
     grid_2d = np.pad(
         list_1d, (0, next_square - list_1d.size), mode="constant", constant_values=-1
     )
-    
+
     return grid_2d.reshape(int(np.sqrt(next_square)), int(np.sqrt(next_square)))
 
 
@@ -138,6 +138,55 @@ def generate_square_grid_ascending(layer_size):
     grid_size = convert_layer_size_to_grid_size(layer_size)
     grid = np.arange(layer_size).reshape(grid_size)
     return grid
+
+
+def pad_array(array, target_size, pad_value=-1):
+    """Do regular padding of a 2D array."""
+    rows, cols = array.shape
+    target_rows, target_cols = target_size
+
+    # only operate if the first map is smaller
+    if (rows, cols) == (target_rows, target_cols):
+        return array
+    elif rows > target_rows or cols > target_cols:
+        raise ValueError("The array is larger than the target size.")
+
+    new_array = np.full((target_rows, target_cols), pad_value)
+    new_array[:rows, :cols] = array
+
+    return new_array
+
+
+def unpad_layer(rank_map):
+    """Unpad a layer by removing all -1 values."""
+    # TODO rename to unpad_array
+    rank_map = rank_map.flatten()
+    rank_map = rank_map[rank_map != -1]
+    rank_map = make_2d_grid_from_1d_list(rank_map)
+
+    return rank_map
+
+
+def intersperse_pad_array(array, target_size, pad_value=-1):
+    rows, cols = array.shape
+    target_rows, target_cols = target_size
+
+    # only operate if the first map is smaller
+    if (rows, cols) == (target_rows, target_cols):
+        return array
+    elif rows > target_rows or cols > target_cols:
+        raise ValueError("The array is larger than the target size.")
+
+    # Calculate where to place the original array values
+    row_indices = np.linspace(0, target_rows - 1, rows, dtype=int)
+    col_indices = np.linspace(0, target_cols - 1, cols, dtype=int)
+
+    new_array = np.full((target_rows, target_cols), pad_value)
+    for i, row in enumerate(row_indices):
+        for j, col in enumerate(col_indices):
+            new_array[row, col] = array[i, j]
+
+    return new_array
 
 
 def index_to_coord(index, grid_shape):
