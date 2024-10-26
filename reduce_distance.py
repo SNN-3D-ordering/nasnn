@@ -39,6 +39,7 @@ def generate_rank_representation(config):
 
     for heatmap in network_representation["heatmaps"]:
         rank_map = generate_rank_map(heatmap)
+        rank_map = normalize_rank_map(rank_map)
         rank_maps.append(rank_map)
 
     layers = network_representation["layers"]
@@ -51,12 +52,25 @@ def generate_rank_representation(config):
     return rank_maps, layers
 
 
+def normalize_rank_map(rank_map, padding_value=-1):
+    """Normalize the rank map so that the maximum rank is len(rank_map) - 1."""
+    flat_rank_map = rank_map.flatten()
+    max_rank = np.max(flat_rank_map[flat_rank_map != padding_value])
+    scaling_factor = (len(flat_rank_map) - 1) / max_rank
+
+    # Apply the scaling factor to all non-padding values
+    normalized_rank_map = np.where(rank_map != padding_value, rank_map * scaling_factor, padding_value)
+
+    return normalized_rank_map
+
+
 def compute_similarity_score(rank_map1, rank_map2):
     """0 means the rank maps are identical, negative values mean they are dissimilar."""
     return -1 * np.sum(np.abs(rank_map1 - rank_map2))
 
 
 def compute_similarity_score_kernel(rank_map1, rank_map2, kernel_size=3):
+    """Compute the similarity score between two rank maps using a kernel."""
     # use a kernel to compare the rank maps
     kernel = np.ones((kernel_size, kernel_size))
     kernel = kernel / np.sum(kernel)
@@ -254,4 +268,3 @@ if __name__ == "__main__":
         config = yaml.safe_load(file)
 
     rank_maps = reduce_distance(config)
-    print(rank_maps)
