@@ -157,17 +157,17 @@ def pad_array(array, target_size, pad_value=-1):
     return new_array
 
 
-def unpad_layer(rank_map):
-    """Unpad a layer by removing all -1 values."""
-    # TODO rename to unpad_array
-    rank_map = rank_map.flatten()
-    rank_map = rank_map[rank_map != -1]
-    rank_map = make_2d_grid_from_1d_list(rank_map)
+def unpad_array(grid):
+    """Unpad a grid by removing all -1 values."""
+    grid = grid.flatten()
+    grid = grid[grid != -1]
+    grid = make_2d_grid_from_1d_list(grid)
 
-    return rank_map
+    return grid
 
 
 def intersperse_pad_array(array, target_size, pad_value=-1):
+    """Intersperse padding of a 2D array."""
     rows, cols = array.shape
     target_rows, target_cols = target_size
 
