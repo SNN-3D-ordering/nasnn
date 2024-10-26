@@ -202,7 +202,7 @@ def reduce_distance(config):
     for map in rank_maps:
         print(map)
 
-
+    print(type(rank_maps[0]))
     # reduce the distance between the layers
     for i in range(len(rank_maps) - 1):
         print("Simulated Annealing between layers", i, "and", i + 1)
@@ -212,6 +212,7 @@ def reduce_distance(config):
         print("New score:", compute_similarity_score(rank_maps[i], rank_maps[i + 1]))
         print("new score kernel:", compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]))
 
+    print(type(rank_maps[0]))
     # unpad layers
     for i in range(len(rank_maps)):
         rank_maps[i] = unpad_layer(rank_maps[i])
@@ -226,3 +227,4 @@ if __name__ == "__main__":
 
     rank_maps = reduce_distance(config)
     print(rank_maps)
+    print(type(rank_maps[0]))
