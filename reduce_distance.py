@@ -59,7 +59,9 @@ def normalize_rank_map(rank_map, padding_value=-1):
     scaling_factor = (len(flat_rank_map) - 1) / max_rank
 
     # Apply the scaling factor to all non-padding values
-    normalized_rank_map = np.where(rank_map != padding_value, rank_map * scaling_factor, padding_value)
+    normalized_rank_map = np.where(
+        rank_map != padding_value, rank_map * scaling_factor, padding_value
+    )
 
     return normalized_rank_map
 
@@ -179,15 +181,25 @@ def simulated_annealing(rank_map1, rank_map2, layer2, kernel_size=3):
     best_state = current_state
     best_score = current_score
 
+    # Identify valid indices where rank_map2 values are not -1
+    valid_indices2 = np.argwhere(rank_map2 != -1)
+
     while temperature > temperature_min:
         # generate a new state by shuffling the existing values (select two random positions and swap them)
         new_state = np.copy(current_state)
-        i1, j1 = np.random.randint(0, new_state.shape[0]), np.random.randint(
+        """i1, j1 = np.random.randint(0, new_state.shape[0]), np.random.randint(
             0, new_state.shape[1]
         )
         i2, j2 = np.random.randint(0, new_state.shape[0]), np.random.randint(
             0, new_state.shape[1]
-        )
+        )"""
+
+        # Choose two different valid index positions to swap
+        idx1, idx2 = np.random.choice(len(valid_indices2), size=2, replace=False)
+
+        # Get the actual indices in rank_map2 from valid_indices2
+        (i1, j1), (i2, j2) = valid_indices2[idx1], valid_indices2[idx2]
+
         new_state[i1, j1], new_state[i2, j2] = new_state[i2, j2], new_state[i1, j1]
         # also swap the values in the layer
         layer2[i1, j1], layer2[i2, j2] = layer2[i2, j2], layer2[i1, j1]
