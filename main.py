@@ -8,6 +8,7 @@ from utils import get_next_square_numbers
 import matplotlib.pyplot as plt
 import argparse
 from network_representation import NetworkRepresentation
+from metric import measure_network
 
 # Argument parser for command line flags
 parser = argparse.ArgumentParser(description="Train or evaluate the model.")
@@ -88,7 +89,7 @@ if args.train:
     )
 
     # Save the trained model
-    torch.save(net.state_dict(), config["model_filepath"])
+    torch.save(net.state_dict(), config["filepaths"]["model_filepath"])
 
     # Plot the loss curves
     fig = plt.figure(facecolor="w", figsize=(10, 5))
@@ -100,15 +101,23 @@ if args.train:
 
 if args.eval:
     # Load the trained model
-    net.load_state_dict(torch.load(config["model_filepath"]))
+    net.load_state_dict(torch.load(config["filepaths"]["model_filepath"]))
 
     # Evaluate model
     total, correct = test(net, test_loader, device, config)
     print(f"Accuracy: {correct/total*100:.2f}%")
 
+    # Measure network
+    total_distance = measure_network(config["filepaths"]["network_representation_filepath"])
+    print(f"Total weighted Manhattan distance for the entire network: {total_distance}")
+
     # Run simple clustering
     print("Clustering...")
-    cluster_simple(net, test_loader, device, max_steps=1000)
+    cluster_simple(net, test_loader, device, config, max_steps=1000)
+
+    # Measure network again
+    total_distance = measure_network(config["filepaths"]["network_representation_filepath"])
+    print(f"Total weighted Manhattan distance for the entire network after clustering: {total_distance}")
 
     # Record spike times for 100 batches
     # print("Recording spike times...")

@@ -1,6 +1,6 @@
 model:
   num_inputs: 784
-  num_hidden: 1000
+  num_hidden: 784
   num_outputs: 10
   num_steps: 25
   beta: 0.95
@@ -12,6 +12,6 @@ training:
   num_epochs: 1
 
 filepaths:
-  model_filepath: "/data/model.pth"
+  model_filepath: "./data/model.pth"
   network_representation_filepath: "./exports/network_representation.json"
   network_activations_filepath: "./exports/network_activations.json"

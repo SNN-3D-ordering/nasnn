@@ -36,7 +36,7 @@ def test(net, test_loader, device, config, max_steps=None):
     visualize_neuron_positions_color(net.lif1)
     # visualize_heatmaps(heatmaps)
 
-    export_filepath = config["network_representation_filepath"]
+    export_filepath = config["filepaths"]["network_representation_filepath"]
     network_representation.export_representation(export_filepath)
 
     return total, correct
@@ -77,11 +77,12 @@ def record(net, test_loader, device, config, record_batches=None):
         net.get_activations()
     )  # Call the method to get activations #TODO get these within export_activations
 
-    export_filepath = config["network_activations_filepath"]
+    export_filepath = config["filepaths"]["network_activations_filepath"]
     network_representation.export_activations(activations, export_filepath)
 
 
-def cluster_simple(net, test_loader, device, max_steps=None):
+def cluster_simple(net, test_loader, device, config, max_steps=None):
+    # TODO let this load a specified nr of samples up to test_loader max amount (print message)
     with torch.no_grad():
         net.eval()
         net.set_cluster_simple(True)
@@ -99,4 +100,11 @@ def cluster_simple(net, test_loader, device, max_steps=None):
             visualize_neuron_positions_color(net.lif1, spk_sum=net.heatmaps[1])
         else:
             visualize_neuron_positions_color(net.lif1)
+
+        print("Clustering done. Writing...")
+        layers, weight_matrices, heatmaps = net.export_model_structure()
+        network_representation = NetworkRepresentation(layers, weight_matrices, heatmaps)
+        export_filepath = config["filepaths"]["network_representation_filepath"]
+        network_representation.export_representation(export_filepath)
+
         return None
