@@ -3,14 +3,10 @@ import yaml
 import numpy as np
 from utils import make_2d_grid_from_1d_list
 
-config_filepath = "data/config.yaml"
-with open(config_filepath, "r") as file:
-    config = yaml.safe_load(file)
-
 
 def generate_rank_map(heatmap, epsilon=1e-5):
     """
-    Generate a rank map from the input heatmap.
+    Generate a 2D rank map from the 1D input heatmap.
     """
     sorted_indices = np.argsort(heatmap)
     rank_map = np.zeros_like(heatmap, dtype=int)
@@ -74,6 +70,7 @@ def generate_rank_representation(config):
 
 
 def compute_similarity_score(rank_map1, rank_map2):
+    """0 means the rank maps are identical, negative values mean they are dissimilar."""
     return -1 * np.sum(np.abs(rank_map1 - rank_map2))
 
 
@@ -121,8 +118,8 @@ def intersperse_pad_array(array, target_size, pad_value=-1):
 
 
 def align_layer_sizes(rank_maps):
-    # get the size of the largest layer
-    max_layer_size = max([rank_map.size for rank_map in rank_maps])
+    # get the size of the largest layer (assuming square arrays)
+    max_layer_size = max([rank_map.shape[0] for rank_map in rank_maps])
 
     # pad the smaller layers with -1
     padded_rank_maps = []
@@ -136,9 +133,9 @@ def align_layer_sizes(rank_maps):
 
 
 def unpad_layer(rank_map):
-    # remove the -1 padding
+    """Unpad a layer by removing all -1 values."""
+    rank_map = rank_map.flatten()
     rank_map = rank_map[rank_map != -1]
-    # add new -1s to make the rank_map square TODO make this 
     rank_map = make_2d_grid_from_1d_list(rank_map)
 
 
@@ -147,7 +144,7 @@ def simulated_annealing(rank_map1, rank_map2, kernel_size=3):
     # initialize the temperature
     temperature = 1.0
     temperature_min = 0.00001
-    alpha = 0.9
+    alpha = 0.95
 
     # initialize the current state
     current_state = rank_map2
@@ -158,11 +155,11 @@ def simulated_annealing(rank_map1, rank_map2, kernel_size=3):
     best_score = current_score
 
     while temperature > temperature_min:
-        # generate a new state
+        # generate a new state by shuffling the existing values (select two random positions and swap them)
         new_state = np.copy(current_state)
-        i = np.random.randint(0, new_state.shape[0])
-        j = np.random.randint(0, new_state.shape[1])
-        new_state[i, j] = np.random.randint(0, new_state.size)
+        i1, j1 = np.random.randint(0, new_state.shape[0]), np.random.randint(0, new_state.shape[1])
+        i2, j2 = np.random.randint(0, new_state.shape[0]), np.random.randint(0, new_state.shape[1])
+        new_state[i1, j1], new_state[i2, j2] = new_state[i2, j2], new_state[i1, j1]
 
         # compute the new score
         new_score = compute_similarity_score_kernel(rank_map1, new_state, kernel_size)
@@ -190,9 +187,18 @@ def reduce_distance(config):
     rank_maps = generate_rank_representation(config)
     rank_maps = align_layer_sizes(rank_maps)
 
+    for map in rank_maps:
+        print(map)
+
+
     # reduce the distance between the layers
     for i in range(len(rank_maps) - 1):
+        print("Simulated Annealing between layers", i, "and", i + 1)
+        print("Current score:", compute_similarity_score(rank_maps[i], rank_maps[i + 1]))
+        print("current score kernel:", compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]))
         rank_maps[i + 1] = simulated_annealing(rank_maps[i], rank_maps[i + 1])
+        print("New score:", compute_similarity_score(rank_maps[i], rank_maps[i + 1]))
+        print("new score kernel:", compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]))
 
     # unpad layers
     for i in range(len(rank_maps)):
@@ -202,5 +208,9 @@ def reduce_distance(config):
 
 
 if __name__ == "__main__":
+    config_filepath = "data/config.yaml"
+    with open(config_filepath, "r") as file:
+        config = yaml.safe_load(file)
+
     rank_maps = reduce_distance(config)
     print(rank_maps)
