@@ -64,8 +64,7 @@ def make_2d_grid_from_1d_list(list_1d):
 
     return grid_2d.reshape(int(np.sqrt(next_square)), int(np.sqrt(next_square)))
 
-
-def map_to_2d_grid_row_wise(coordinates, grid_size):
+    # def map_to_2d_grid_row_wise(coordinates, grid_size):
     """
     Maps 2D coordinates to a 2D grid.
 
@@ -77,13 +76,71 @@ def map_to_2d_grid_row_wise(coordinates, grid_size):
         np.ndarray: 2D grid with neuron indices.
     """
     num_neurons = coordinates.shape[0]
-    sorted_indices = np.argsort(coordinates[:, 0])  # Sort by x-coordinate TODO build proper sorting
+    sorted_indices = np.argsort(
+        coordinates[:, 0]
+    )  # Sort by x-coordinate TODO build proper sorting
     grid = np.zeros(grid_size, dtype=int) - 1  # Initialize grid with -1 (empty)
 
     for idx, neuron_idx in enumerate(sorted_indices):
         row = idx // grid_size[1]
         col = idx % grid_size[1]
         grid[row, col] = neuron_idx
+
+    return grid
+
+
+def map_to_2d_grid_spiral_center(coordinates, grid_size):
+    """
+    Maps 2D coordinates to a 2D grid, starting from the center and filling in a spiral.
+
+    Args:
+        coordinates (np.ndarray): Array of 2D coordinates.
+        grid_size (tuple): Size of the grid (rows, cols).
+
+    Returns:
+        np.ndarray: 2D grid with neuron indices indexed spirally from the center.
+    """
+    num_neurons = coordinates.shape[0]
+
+    # Calculate the center of the coordinates
+    center = np.mean(coordinates, axis=0)
+
+    # Calculate distance from center for each point and sort based on it
+    distances = np.linalg.norm(coordinates - center, axis=1)
+    sorted_indices = np.argsort(distances)
+
+    # Initialize grid with -1 (empty)
+    grid = np.zeros(grid_size, dtype=int) - 1
+
+    # Determine the center of the grid
+    mid_row = grid_size[0] // 2
+    mid_col = grid_size[1] // 2
+
+    # Directions for spiral (right, down, left, up)
+    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+    dir_idx = 0  # Start with the 'right' direction
+
+    # Initialize the starting point in the center of the grid
+    row, col = mid_row, mid_col
+
+    # Place neurons in the grid following the spiral order
+    for idx in sorted_indices:
+        grid[row, col] = idx
+        next_row = row + directions[dir_idx][0]
+        next_col = col + directions[dir_idx][1]
+
+        # Check if the new position is within the grid and empty; else, change direction
+        if not (
+            0 <= next_row < grid_size[0]
+            and 0 <= next_col < grid_size[1]
+            and grid[next_row, next_col] == -1
+        ):
+            dir_idx = (dir_idx + 1) % 4  # Change direction
+            next_row = row + directions[dir_idx][0]
+            next_col = col + directions[dir_idx][1]
+
+        # Move to the next cell in the spiral
+        row, col = next_row, next_col
 
     return grid
 
@@ -98,7 +155,9 @@ def map_to_1d_list_row_wise(coordinates):
     Returns:
         np.ndarray: 1D list with neuron indices.
     """
-    sorted_indices = np.argsort(coordinates[:, 0])  # Sort by x-coordinate TODO build proper sorting
+    sorted_indices = np.argsort(
+        coordinates[:, 0]
+    )  # Sort by x-coordinate TODO build proper sorting
     return sorted_indices
 
 
