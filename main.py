@@ -1,6 +1,6 @@
 import torch
 import yaml
-from model import Net
+from big_model import Net
 from data import get_data_loaders
 from train import train_model
 from test import test, cluster_simple, record
