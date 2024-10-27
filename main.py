@@ -104,15 +104,17 @@ if args.eval:
     net.load_state_dict(torch.load(config["filepaths"]["model_filepath"]))
 
     # Evaluate model
-    total, correct = test(net, test_loader, device, config)
-    print(f"Accuracy: {correct/total*100:.2f}%")
+    #print("Evaluating model accuracy...")
+    #total, correct = test(net, test_loader, device, config)
+    #print(f"Accuracy: {correct/total*100:.2f}%")
 
     # Measure network
+    print("Measuring network distance...")
     total_distance = measure_network(config["filepaths"]["network_representation_filepath"])
     print(f"Total weighted Manhattan distance for the entire network: {total_distance}")
 
     # Run simple clustering
-    print("Clustering...")
+    print("Running simple clustering...")
     cluster_simple(net, test_loader, device, config, max_steps=1000)
 
     # Measure network again

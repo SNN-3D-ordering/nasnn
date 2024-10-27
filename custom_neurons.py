@@ -58,6 +58,10 @@ class CustomLeaky(snn.Leaky):
             * (torch.mean(fired_coordinates, dim=0) - fired_coordinates)
         )
 
+        # Squeeze extra dimensions if necessary (e.g. when batch_size=1)
+        if inward_movement.dim() > fired_coordinates.dim():
+            inward_movement = inward_movement.squeeze()
+
         self.coordinates[fired_indices] += inward_movement
 
         total_inward_movement = torch.sum(inward_movement, dim=0)
@@ -79,6 +83,7 @@ class CustomLeaky(snn.Leaky):
         # Add a small random perturbation to spread neurons out slightly
         if heat != 0:
             self.coordinates += torch.randn_like(self.coordinates) * heat
+
 
     def export_positions_history(self, file_path):
         """
@@ -133,5 +138,7 @@ class CustomLeaky(snn.Leaky):
         #    spk, current_step
         # )  # TODO check if we also want this for training / if we want it at all
         # self.update_connections(spk, input, weight_matrix)
+        if self.cluster_simple:
+            self.cluster_neurons_simple(spk)
 
         return spk, mem

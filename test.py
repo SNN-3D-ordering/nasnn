@@ -85,6 +85,7 @@ def cluster_simple(net, test_loader, device, config, max_steps=None):
     # TODO let this load a specified nr of samples up to test_loader max amount (print message)
     with torch.no_grad():
         net.eval()
+        print("debugging: setting cluster_simple to True")
         net.set_cluster_simple(True)
 
         for step, (data, targets) in enumerate(test_loader):

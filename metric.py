@@ -34,15 +34,6 @@ def calculate_distance_between_layers(data, layer_idx):
     num_neurons_current_layer = len(current_layer_heatmap)
     num_neurons_next_layer = len(next_layer_heatmap)
 
-    print(f"Processing between layer {layer_idx} and layer {layer_idx + 1}:")
-    print(f"Current layer shape: {current_shape}, Next layer shape: {next_shape}")
-    print(
-        f"Heatmap length (current layer): {len(current_layer_heatmap)}, (next layer): {len(next_layer_heatmap)}"
-    )
-    print(
-        f"Weight matrix shape: ({len(weight_matrix)}, {len(weight_matrix[0]) if weight_matrix else 0})"
-    )
-
     # Check that the shapes match, if not raise an error
     if (
         len(weight_matrix) != num_neurons_next_layer
