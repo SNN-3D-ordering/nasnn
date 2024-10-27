@@ -69,6 +69,7 @@ def record(net, test_loader, device, config, record_batches=None):
     network_representation = NetworkRepresentation(layers, weight_matrices, heatmaps)
 
     # Debugging:
+    print(heatmaps.shape)
     heatmaps = network_representation.heatmaps
     visualize_neuron_positions_color(net.lif1)
     visualize_heatmaps(heatmaps)
@@ -85,9 +86,10 @@ def cluster_simple(net, test_loader, device, config, max_steps=None):
     # TODO let this load a specified nr of samples up to test_loader max amount (print message)
     with torch.no_grad():
         net.eval()
-        print("debugging: setting cluster_simple to True")
         net.set_cluster_simple(True)
 
+        # debugging: print first 10 values from first heatmap
+        print("Heatmap before clustering: ", net.heatmaps[1][:10])
         for step, (data, targets) in enumerate(test_loader):
             if max_steps is not None and step >= max_steps:
                 break
@@ -104,6 +106,7 @@ def cluster_simple(net, test_loader, device, config, max_steps=None):
 
         print("Clustering done. Writing...")
         layers, weight_matrices, heatmaps = net.export_model_structure()
+        print("Heatmap after clustering: ", heatmaps[1][:10])
         network_representation = NetworkRepresentation(layers, weight_matrices, heatmaps)
         export_filepath = config["filepaths"]["network_representation_filepath"]
         network_representation.export_representation(export_filepath)

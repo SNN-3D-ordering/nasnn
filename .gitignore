@@ -163,3 +163,6 @@ cython_debug/
 
 # mnist files
 /data/MNIST/
+
+# model
+/data/model.pth

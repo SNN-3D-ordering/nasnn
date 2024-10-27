@@ -77,7 +77,7 @@ def map_to_2d_grid_row_wise(coordinates, grid_size):
         np.ndarray: 2D grid with neuron indices.
     """
     num_neurons = coordinates.shape[0]
-    sorted_indices = np.argsort(coordinates[:, 0])  # Sort by x-coordinate
+    sorted_indices = np.argsort(coordinates[:, 0])  # Sort by x-coordinate TODO build proper sorting
     grid = np.zeros(grid_size, dtype=int) - 1  # Initialize grid with -1 (empty)
 
     for idx, neuron_idx in enumerate(sorted_indices):
@@ -86,6 +86,20 @@ def map_to_2d_grid_row_wise(coordinates, grid_size):
         grid[row, col] = neuron_idx
 
     return grid
+
+
+def map_to_1d_list_row_wise(coordinates):
+    """
+    Maps 2D coordinates to a 1D list row-wise.
+
+    Args:
+        coordinates (np.ndarray): Array of 2D coordinates.
+
+    Returns:
+        np.ndarray: 1D list with neuron indices.
+    """
+    sorted_indices = np.argsort(coordinates[:, 0])  # Sort by x-coordinate TODO build proper sorting
+    return sorted_indices
 
 
 def get_next_square_numbers(number):

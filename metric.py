@@ -1,7 +1,7 @@
 import json
 from tqdm import tqdm
 from utils import index_to_coord, manhattan_distance_2d
-
+import numpy as np
 
 def calculate_distance_between_layers(data, layer_idx):
     """
@@ -21,9 +21,12 @@ def calculate_distance_between_layers(data, layer_idx):
                     current and next layers.
     """
     heatmaps = data["heatmaps"]
-    weight_matrices = data["weight_matrices"]
+    weight_matrices = data["weight_matrices"] # TODO load only current one and next one
     layer_shapes = data["metadata"]["layer_dimensions"]
 
+    current_layer = np.array(data["layers"][layer_idx]).flatten()
+    next_layer = np.array(data["layers"][layer_idx + 1]).flatten()
+    
     current_layer_heatmap = heatmaps[layer_idx]
     next_layer_heatmap = heatmaps[layer_idx + 1]
     weight_matrix = weight_matrices[layer_idx]
@@ -53,23 +56,69 @@ def calculate_distance_between_layers(data, layer_idx):
 
     layer_distance = 0
 
+    # TODO instead of iterating over layer size, iterate over the current layer and take the values that are in there as indices for where to look in the heatmap
+    # for n_idx in tqdm(
+    #     range(num_neurons_current_layer),
+    #     total=num_neurons_current_layer,
+    #     desc=f"Layer {layer_idx} neurons",
+    # ):
+    #     if current_layer_heatmap[n_idx] == 0:
+    #         continue  # Skip padded neurons in the current layer
+
+    #     n_coord = index_to_coord(n_idx, current_shape)
+    #     for m_idx in range(
+    #         num_neurons_next_layer
+    #     ):  # Loop through valid neurons in the next layer
+    #         if next_layer_heatmap[m_idx] == 0:
+    #             continue  # Skip padded neurons in the next layer
+
+    #         m_coord = index_to_coord(m_idx, next_shape)
+
+    #         # Adjust m_coord to align centers of different grid sizes
+    #         adjusted_m_coord = (
+    #             m_coord[0] + offset_current_to_next[0],
+    #             m_coord[1] + offset_current_to_next[1],
+    #         )
+
+    #         # Get the weight from the matrix
+    #         weight = (
+    #             weight_matrix[m_idx][n_idx]
+    #             if m_idx < len(weight_matrix) and n_idx < len(weight_matrix[m_idx])
+    #             else 0
+    #         )
+
+    #         # Only consider non-zero weights
+    #         if weight != 0:
+    #             grid_distance = manhattan_distance_2d(n_coord, adjusted_m_coord)
+    #             distance = (
+    #                 1 + grid_distance
+    #             )  # Vertical distance + grid distance, assume the vertical distance between layers is 1
+    #             layer_distance += (
+    #                 current_layer_heatmap[n_idx] * distance
+    #             )  # Neurons that are more active contribute more to the distance
+
+    # n_idx and m_idx are the values stored in the layer, which represent neuron indices.
+    # n_grid_idx and m_grid_idx are the indices of those values in the layer.
+    n_grid_idx = 0
+    m_grid_idx = 0
+
     for n_idx in tqdm(
-        range(num_neurons_current_layer),
+        current_layer,
         total=num_neurons_current_layer,
         desc=f"Layer {layer_idx} neurons",
     ):
         if current_layer_heatmap[n_idx] == 0:
             continue  # Skip padded neurons in the current layer
 
-        n_coord = index_to_coord(n_idx, current_shape)
-        for m_idx in range(
-            num_neurons_next_layer
-        ):  # Loop through valid neurons in the next layer
+        n_coord = index_to_coord(n_grid_idx, current_shape)
+        n_grid_idx += 1
+
+        for m_idx in next_layer:  # Loop through valid neurons in the next layer
             if next_layer_heatmap[m_idx] == 0:
                 continue  # Skip padded neurons in the next layer
 
-            m_coord = index_to_coord(m_idx, next_shape)
-
+            m_coord = index_to_coord(m_grid_idx, next_shape)
+            m_grid_idx += 1
             # Adjust m_coord to align centers of different grid sizes
             adjusted_m_coord = (
                 m_coord[0] + offset_current_to_next[0],
@@ -114,7 +163,7 @@ def calculate_total_distance(data):
     for layer_idx in range(num_layers - 1):
         layer_distance = calculate_distance_between_layers(data, layer_idx)
         print(
-            f"Total weighted Manhattan distance between layer {layer_idx} and layer {layer_idx + 1}: {layer_distance}"
+            f"Total weighted Manhattan distance between layers {layer_idx} and {layer_idx + 1}: {layer_distance}"
         )
         total_distance += layer_distance
 

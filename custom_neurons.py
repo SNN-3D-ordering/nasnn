@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import json
 from utils import map_to_2d_grid_row_wise
+from utils import map_to_1d_list_row_wise
 from utils import convert_layer_size_to_grid_size
 
 
@@ -84,7 +85,6 @@ class CustomLeaky(snn.Leaky):
         if heat != 0:
             self.coordinates += torch.randn_like(self.coordinates) * heat
 
-
     def export_positions_history(self, file_path):
         """
         Exports the positions history to a JSON file.
@@ -114,10 +114,18 @@ class CustomLeaky(snn.Leaky):
             np.ndarray: 2d grid with neuron indices.
         """
         coordinates = self.coordinates.cpu().numpy()
-        grid = map_to_2d_grid_row_wise(
-            coordinates, self.grid_dims
-        )  # TODO try out other mapping functions
+        grid = map_to_2d_grid_row_wise(coordinates, self.grid_dims)
         return grid
+
+    def return_1d_list(self):
+        """
+        Maps the 2D coordinates to a 1D list.
+
+        Returns:
+            np.ndarray: 1d list with neuron indices.
+        """
+        coordinates = self.coordinates.cpu().numpy()
+        return map_to_1d_list_row_wise(coordinates) # TODO remove
 
     def return_connections(self):
         """

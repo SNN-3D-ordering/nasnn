@@ -104,9 +104,9 @@ if args.eval:
     net.load_state_dict(torch.load(config["filepaths"]["model_filepath"]))
 
     # Evaluate model
-    #print("Evaluating model accuracy...")
-    #total, correct = test(net, test_loader, device, config)
-    #print(f"Accuracy: {correct/total*100:.2f}%")
+    print("Evaluating model accuracy...")
+    total, correct = test(net, test_loader, device, config)
+    print(f"Accuracy: {correct/total*100:.2f}%")
 
     # Measure network
     print("Measuring network distance...")
