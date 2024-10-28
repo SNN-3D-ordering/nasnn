@@ -162,9 +162,9 @@ def calculate_total_distance(data):
     # Iterate through each layer except the last one
     for layer_idx in range(num_layers - 1):
         layer_distance = calculate_distance_between_layers(data, layer_idx)
-        print(
-            f"Total weighted Manhattan distance between layers {layer_idx} and {layer_idx + 1}: {layer_distance}"
-        )
+        #print(
+        #    f"Total weighted Manhattan distance between layers {layer_idx} and {layer_idx + 1}: {layer_distance}"
+        #)
         total_distance += layer_distance
 
     return total_distance

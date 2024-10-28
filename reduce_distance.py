@@ -213,39 +213,24 @@ def reduce_distance(config):
         [consecutive_padding_amount(rank_map) for rank_map in rank_maps]
     )
 
-    print("amount of rank maps:", len(rank_maps))
-    print(
-        "shapes of rank maps:",
-        rank_maps[0].shape,
-        rank_maps[1].shape,
-        rank_maps[2].shape,
-    )
-    print("max consecutive pads:", max_consecutive_pads)
+
     for map in rank_maps:
         print(map)
 
     # reduce the distance between the layers
     for i in range(len(rank_maps) - 1):
-        print("Simulated Annealing between layers", i, "and", i + 1)
-        print(
-            "Current score:", compute_similarity_score(rank_maps[i], rank_maps[i + 1])
-        )
-        print(
-            "current score kernel:",
-            compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]),
-        )
+
+
+        curr_score = compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]),
+
         rank_maps[i + 1] = simulated_annealing(
             rank_maps[i],
             rank_maps[i + 1],
             layers[i + 1],
             kernel_size=max_consecutive_pads,
         ) # Sorting of layers happens here
-        print("New score:", compute_similarity_score(rank_maps[i], rank_maps[i + 1]))
-        print(
-            "new score kernel:",
-            compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]),
-        )
-
+        new_score = compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]),
+        print("Sim. Annealing between layers", i, "&", i + 1, " / Score:", curr_score, "->", new_score)
     # unpad layers
     #rank_maps = undo_align_layer_sizes(rank_maps)
     layers = undo_align_layer_sizes(layers)

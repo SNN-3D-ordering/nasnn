@@ -185,7 +185,35 @@ def map_to_2d_grid_row_wise(coordinates, grid_size):
     return grid
 
 
-def make_2d_grid_from_1d_list(coordinates, grid_size):
+def make_grid_from_coordinates(coordinates, pad_value=-1):
+    """
+    Take a set of continuous values, generate a 2d grid off them.
+    """
+    # Calculate grid params, init grid
+    num_coords = len(coordinates)
+    grid_side_length = int(np.ceil(np.sqrt(num_coords)))
+    grid = np.full((grid_side_length, grid_side_length), pad_value, dtype=int)
+
+    # Store idx and coordinates
+    coordinates_list = [[idx, [x, y]] for idx, (x, y) in enumerate(coordinates)]
+
+    # Sort the coordinates list according to y value
+    coordinates_list_sorted_by_y = sorted(coordinates_list, key=lambda item: item[1][1])
+
+    # Take side_length sorted_y_indices at a time, sort them by their x_value, and take that as one row
+    rows = []
+    for i in range(0, num_coords, grid_side_length):
+        chunk = coordinates_list_sorted_by_y[i : i + grid_side_length]
+        chunk_sorted = sorted(chunk, key=lambda x: x[1][0])
+        rows.append([idx for idx, _ in chunk_sorted])
+
+    # Write to grid
+    for row_idx, sublist in enumerate(reversed(rows)):
+        grid[row_idx, : len(sublist)] = sublist
+
+    return grid
+
+    # def make_2d_grid_from_1d_list(coordinates, grid_size):
     """
     Maps neurons to a uniform grid ensuring a regular distance between each.
 
