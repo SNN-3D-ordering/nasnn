@@ -1,8 +1,8 @@
 # an algorithm to reduce the total manhattan distance between neurons in the entire network
 import yaml
 import numpy as np
-from utils import make_2d_grid_from_1d_list, pad_array, unpad_layer, intersperse_pad_array
-
+from utils import make_2d_grid_from_1d_list, pad_array, unpad_array, intersperse_pad_array
+from network_representation import NetworkRepresentation
 
 def generate_rank_map(heatmap, epsilon=1e-5):
     """
@@ -135,6 +135,16 @@ def align_layer_sizes(grids):
     return padded_grids
 
 
+def undo_align_layer_sizes(grids):
+    # remove the padding from the layers
+    unpadded_grids = []
+    for grid in grids:
+        unpadded_rank_map = unpad_array(grid)
+        unpadded_grids.append(unpadded_rank_map)
+
+    return unpadded_grids
+
+
 def simulated_annealing(rank_map1, rank_map2, layer2, kernel_size=3):
     # TODO verify implementation
     # initialize the temperature
@@ -229,7 +239,7 @@ def reduce_distance(config):
             rank_maps[i + 1],
             layers[i + 1],
             kernel_size=max_consecutive_pads,
-        )
+        ) # Sorting of layers happens here
         print("New score:", compute_similarity_score(rank_maps[i], rank_maps[i + 1]))
         print(
             "new score kernel:",
@@ -237,11 +247,31 @@ def reduce_distance(config):
         )
 
     # unpad layers
-    for i in range(len(rank_maps)):
-        rank_maps[i] = unpad_layer(rank_maps[i])
+    #rank_maps = undo_align_layer_sizes(rank_maps)
+    layers = undo_align_layer_sizes(layers)
 
-    return rank_maps
+    # debugging: print the type of layers and the shape (should be list of lists)
+    print(type(layers))
 
+
+    return layers
+
+def cluster_advanced(config):
+    clustered_layers = reduce_distance(config)
+    #clustered_layers = [layer.tolist() for layer in clustered_layers]
+
+    filepath_unclustered = config["filepaths"]["network_representation_filepath"]
+    filepath_clustered = config["filepaths"]["advanced_clustered_network_representation_filepath"]
+
+    with open(filepath_unclustered) as file:
+        network_unclustered = yaml.safe_load(file)
+
+    weight_matrices = network_unclustered["weight_matrices"]
+    heatmaps = network_unclustered["heatmaps"]
+
+    network_representation = NetworkRepresentation(clustered_layers, weight_matrices, heatmaps)
+    network_representation.export_representation(filepath_clustered)
+    
 
 if __name__ == "__main__":
     config_filepath = "data/config.yaml"

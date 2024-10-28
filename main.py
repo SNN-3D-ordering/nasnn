@@ -5,6 +5,7 @@ from data import get_data_loaders
 from train import train_model
 from test import test, cluster_simple, record
 from utils import get_next_square_numbers
+from reduce_distance import cluster_advanced
 import matplotlib.pyplot as plt
 import argparse
 from network_representation import NetworkRepresentation
@@ -117,10 +118,18 @@ if args.eval:
     print("Running simple clustering...")
     cluster_simple(net, test_loader, device, config, max_steps=1000)
 
-    # Measure network again
-    total_distance = measure_network(config["filepaths"]["network_representation_filepath"])
+    # Run advanced clustering
+    print("Running advanced clustering...")
+    cluster_advanced(config)
+
+    # Measure simple clustered network
+    total_distance = measure_network(config["filepaths"]["simple_clustered_network_representation_filepath"])
     print(f"Total weighted Manhattan distance for the entire network after clustering: {total_distance}")
 
+    # Measure advanced clustered network
+    total_distance = measure_network(config["filepaths"]["advanced_clustered_network_representation_filepath"])
+    print(f"Total weighted Manhattan distance for the entire network after advanced clustering: {total_distance}")
+    
     # Record spike times for 100 batches
     # print("Recording spike times...")
     # record(net, test_loader, device, config, record_batches=10)
