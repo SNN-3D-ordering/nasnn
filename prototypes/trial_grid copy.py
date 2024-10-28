@@ -2,51 +2,60 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def calculate_centroid(coordinates):
-    return np.mean(coordinates, axis=0)
-
-
 def map_to_grid(coordinates, grid_size):
-    centroid = calculate_centroid(coordinates)
+    centroid = np.mean(coordinates, axis=0)
+
+    # Determine the range of coordinates
+    min_x, min_y = np.min(coordinates, axis=0)
+    max_x, max_y = np.max(coordinates, axis=0)
+
+    # Calculate the scaling factors based on the coordinate ranges
+    range_x = max_x - min_x
+    range_y = max_y - min_y
+
+    # Calculate distances and argsort
     distances_to_centroid = np.linalg.norm(coordinates - centroid, axis=1)
     sorted_indices = np.argsort(distances_to_centroid)
-    sorted_points = coordinates[sorted_indices]
 
-    grid_x = np.linspace(0, 200, grid_size + 1)
-    grid_y = np.linspace(0, 200, grid_size + 1)
-
+    # Initialize grid definition
+    grid_x = np.linspace(min_x, max_x, grid_size + 1)
+    grid_y = np.linspace(min_y, max_y, grid_size + 1)
     grid = np.full((grid_size, grid_size), -1)
+
     mapped_coords = []
 
-    for idx, point in zip(sorted_indices, sorted_points):
-        x_idx = np.searchsorted(grid_x, point[0]) - 1
-        y_idx = np.searchsorted(grid_y, point[1]) - 1
+    # Normalize the coordinate mapping to fit the grid dimensions and start placement
+    for idx in sorted_indices:
+        point = coordinates[idx]
 
-        x_idx = min(x_idx, grid_size - 1)
-        y_idx = min(y_idx, grid_size - 1)
+        # Map coordinates to grid indices via normalization
+        rel_x = int((point[0] - min_x) / range_x * (grid_size - 1))
+        rel_y = int((point[1] - min_y) / range_y * (grid_size - 1))
 
-        if grid[x_idx, y_idx] == -1:
-            grid[x_idx, y_idx] = idx
-            mapped_coords.append(
-                (grid_x[x_idx] + grid_x[1] / 2, grid_y[y_idx] + grid_y[1] / 2, idx)
-            )
-        else:
-            for i in range(grid_size):
-                for j in range(grid_size):
-                    if grid[(x_idx + i) % grid_size, (y_idx + j) % grid_size] == -1:
-                        grid[(x_idx + i) % grid_size, (y_idx + j) % grid_size] = idx
+        # Attempt to place it at calculated cell, else find nearest free cell
+        placed = False
+        for offset in range(grid_size):
+            for dx in range(-offset, offset + 1):
+                for dy in range(-offset, offset + 1):
+                    row_idx, col_idx = (rel_y + dy) % grid_size, (
+                        rel_x + dx
+                    ) % grid_size
+                    if grid[row_idx, col_idx] == -1:
+                        grid[row_idx, col_idx] = idx
                         mapped_coords.append(
                             (
-                                grid_x[(x_idx + i) % grid_size] + grid_x[1] / 2,
-                                grid_y[(y_idx + j) % grid_size] + grid_y[1] / 2,
+                                grid_x[col_idx] + grid_x[1] / 2,
+                                grid_y[row_idx] + grid_y[1] / 2,
                                 idx,
                             )
                         )
+                        placed = True
                         break
-                else:
-                    continue
+                if placed:
+                    break
+            if placed:
                 break
-
+    print(grid)
     return grid, mapped_coords
 
 
@@ -137,8 +146,10 @@ coordinates = np.array(
         [30.8, 30.9],
         [50.6, 50.5],
         [70.7, 70.3],
+        [90.8, 90.1],
     ]
 )
+
 
 grid_size = 10
 mapped_grid, mapped_coords = map_to_grid(coordinates, grid_size)
