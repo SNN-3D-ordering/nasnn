@@ -485,6 +485,39 @@ def visualize_tensor(tensor):
     plt.show()
 
 
+def convert_number_to_human_readable(number):
+    """
+    Convert a number to a human-readable format.
+
+    Args:
+        number (int): The number to convert.
+
+    Returns:
+        str: The human-readable number.
+    """
+    if number < 1e3:
+        return str(number)
+    elif number < 1e6:
+        return f"{number/1e3:.1f}K"
+    elif number < 1e9:
+        return f"{number/1e6:.1f}M"
+    else:
+        return f"{number/1e9:.1f}B"
+
+
+def convert_number_to_scientific_notation(number):
+    """
+    Convert a number to scientific notation.
+
+    Args:
+        number (int): The number to convert.
+
+    Returns:
+        str: The number in scientific notation.
+    """
+    return "{:.2e}".format(number)
+
+
 def convert_tensors(obj):
     """
     Convert lists or dicts of tensors to lists of lists for JSON serialization.

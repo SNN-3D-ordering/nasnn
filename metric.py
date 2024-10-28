@@ -1,7 +1,12 @@
 import json
 from tqdm import tqdm
 from utils import index_to_coord, manhattan_distance_2d
+from utils import (
+    convert_number_to_human_readable,
+    convert_number_to_scientific_notation,
+)
 import numpy as np
+
 
 def calculate_distance_between_layers(data, layer_idx):
     """
@@ -21,12 +26,12 @@ def calculate_distance_between_layers(data, layer_idx):
                     current and next layers.
     """
     heatmaps = data["heatmaps"]
-    weight_matrices = data["weight_matrices"] # TODO load only current one and next one
+    weight_matrices = data["weight_matrices"]  # TODO load only current one and next one
     layer_shapes = data["metadata"]["layer_dimensions"]
 
     current_layer = np.array(data["layers"][layer_idx]).flatten()
     next_layer = np.array(data["layers"][layer_idx + 1]).flatten()
-    
+
     current_layer_heatmap = heatmaps[layer_idx]
     next_layer_heatmap = heatmaps[layer_idx + 1]
     weight_matrix = weight_matrices[layer_idx]
@@ -158,14 +163,18 @@ def calculate_total_distance(data):
     """
     num_layers = data["metadata"]["num_layers"]
     total_distance = 0
+    layer_distances = []
 
     # Iterate through each layer except the last one
     for layer_idx in range(num_layers - 1):
         layer_distance = calculate_distance_between_layers(data, layer_idx)
-        #print(
-        #    f"Total weighted Manhattan distance between layers {layer_idx} and {layer_idx + 1}: {layer_distance}"
-        #)
-        total_distance += layer_distance
+        layer_distances.append(layer_distance)
+
+    print(f"Layer distances: {layer_distances}")
+    print(
+        f"Total weighted Manhattan distance for the entire network: \n {total_distance} (= {convert_number_to_human_readable(total_distance)} = {convert_number_to_scientific_notation(total_distance)})"
+    )
+    total_distance = sum(layer_distances)
 
     return total_distance
 
@@ -186,9 +195,12 @@ def measure_network(filepath):
 
     # Calculate the total Manhattan distance for the network
     total_distance = calculate_total_distance(data)
+
     return total_distance
 
 
 if __name__ == "__main__":
     total_distance = measure_network("network_representation.json")
-    print(f"Total weighted Manhattan distance for the entire network: {total_distance}")
+    print(
+        f"Total weighted Manhattan distance for the entire network: {total_distance} (= {convert_number_to_human_readable(total_distance)} = {convert_number_to_scientific_notation(total_distance)})"
+    )
