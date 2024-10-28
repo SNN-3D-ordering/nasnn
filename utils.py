@@ -145,6 +145,67 @@ def map_to_2d_grid_row_wise(coordinates, grid_size):
     return grid
 
 
+def make_2d_grid_from_1d_list(coordinates, grid_size):
+    """
+    Maps neurons to a uniform grid ensuring a regular distance between each.
+
+    Args:
+        coordinates (np.ndarray): Array of 2D coordinates of neurons.
+        grid_size (tuple): Size of the grid (rows, cols).
+
+    Returns:
+        np.ndarray: 2D grid with neuron indices filling the grid uniformly.
+    """
+    num_neurons = coordinates.shape[0]
+
+    # Number of grid positions must be at least equal to number of neurons
+    if grid_size[0] * grid_size[1] < num_neurons:
+        raise ValueError("Grid is too small for the number of neurons.")
+
+    # Calculate the center neuron according to original coordinates
+    center = np.mean(coordinates, axis=0)
+    distances = np.linalg.norm(coordinates - center, axis=1)
+    center_index = np.argmin(distances)
+
+    # Create a list of neuron indices
+    neuron_indices = list(range(num_neurons))
+
+    # Sort neuron indices to put center_index at first
+    neuron_indices.remove(center_index)
+    neuron_indices = [center_index] + neuron_indices
+
+    # Create grid and initialize with -1 (empty)
+    grid = np.zeros(grid_size, dtype=int) - 1
+
+    # Determine grid center
+    mid_row = grid_size[0] // 2
+    mid_col = grid_size[1] // 2
+
+    # Calculate step sizes based on grid size and number of neurons
+    num_rows_available = min(grid_size[0], int(np.ceil(np.sqrt(num_neurons))))
+    num_cols_available = min(grid_size[1], int(np.ceil(np.sqrt(num_neurons))))
+
+    # Generate positions in the grid
+    positions = [
+        (i, j) for i in range(num_rows_available) for j in range(num_cols_available)
+    ]
+
+    # Shift positions to start from grid center
+    start_pos_idx = len(positions) // 2
+    centered_positions = [
+        (r + mid_row - num_rows_available // 2, c + mid_col - num_cols_available // 2)
+        for r, c in positions
+    ]
+
+    # Assign neurons to grid positions
+    for idx, pos in zip(neuron_indices, centered_positions):
+        r, c = pos
+        if 0 <= r < grid_size[0] and 0 <= c < grid_size[1]:
+            grid[r, c] = idx
+
+    return grid
+
+
 def map_to_1d_list_row_wise(coordinates):
     """
     Maps 2D coordinates to a 1D list row-wise.
