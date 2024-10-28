@@ -104,6 +104,7 @@ def map_to_2d_grid_row_wise(coordinates, grid_size):
         mapped_coords (list of tuples): A list of tuples containing the grid center (x, y)
                                         and the original index of the coordinate.
     """
+    rows, cols = grid_size
     # Calculate the centroid of the input coordinates (mean along each dimension)
     centroid = np.mean(coordinates, axis=0)
 
@@ -117,17 +118,18 @@ def map_to_2d_grid_row_wise(coordinates, grid_size):
     max_x, max_y = np.max(coordinates, axis=0)
 
     # Create grid ranges dynamically based on min and max values of coordinates
-    grid_x = np.linspace(min_x, max_x, grid_size + 1)
-    grid_y = np.linspace(min_y, max_y, grid_size + 1)
+    grid_x = np.linspace(min_x, max_x, cols + 1)
+    grid_y = np.linspace(min_y, max_y, rows + 1)
 
     # Initialize a grid array with -1 indicating empty cells
-    grid = np.full((grid_size, grid_size), -1)
+    grid = np.full((rows, cols), -1)
 
     # List to store the map of coordinates to grid locations
     mapped_coords = []
 
     # Calculate the halfway point of the grid size
-    half_grid = grid_size // 2
+    half_rows = rows / 2
+    half_cols = cols / 2
 
     # Loop through the indices of points sorted by proximity to the centroid
     for idx in sorted_indices:
@@ -136,35 +138,29 @@ def map_to_2d_grid_row_wise(coordinates, grid_size):
         # Compute initial grid cell coordinates based on the transformed position about the centroid
         rel_x = min(
             max(
-                int(
-                    (point[0] - centroid[0]) / ((max_x - min_x) / grid_size) + half_grid
-                ),
+                int((point[0] - centroid[0]) / ((max_x - min_x) / cols) + half_cols),
                 0,
             ),
-            grid_size - 1,
+            cols - 1,
         )
         rel_y = min(
             max(
-                int(
-                    (point[1] - centroid[1]) / ((max_y - min_y) / grid_size) + half_grid
-                ),
+                int((point[1] - centroid[1]) / ((max_y - min_y) / rows) + half_rows),
                 0,
             ),
-            grid_size - 1,
+            rows - 1,
         )
 
         # Attempt to place it at calculated cell, else find nearest free cell
         placed = False
 
         # Loop over the range of possible offsets (distance from the initial target cell)
-        for offset in range(grid_size):
+        for offset in range(max(rows, cols)):
             # Iterate over horizontal offsets (-offset to +offset)
             for dx in range(-offset, offset + 1):
                 # Iterate over vertical offsets (-offset to +offset)
                 for dy in range(-offset, offset + 1):
-                    row_idx, col_idx = (rel_y + dy) % grid_size, (
-                        rel_x + dx
-                    ) % grid_size
+                    row_idx, col_idx = (rel_y + dy) % rows, (rel_x + dx) % cols
 
                     # If the cell is empty, place the point there
                     if grid[row_idx, col_idx] == -1:
