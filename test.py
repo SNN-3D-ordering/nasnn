@@ -88,8 +88,6 @@ def cluster_simple(net, test_loader, device, config, max_steps=None):
         net.eval()
         net.set_cluster_simple(True)
 
-        # debugging: print first 10 values from first layer
-        print("Layer 1 before clustering: ", net.lif1.coordinates[:10])
         for step, (data, targets) in enumerate(test_loader):
             if max_steps is not None and step >= max_steps:
                 break
@@ -106,7 +104,6 @@ def cluster_simple(net, test_loader, device, config, max_steps=None):
 
         print("Clustering done. Writing...")
         layers, weight_matrices, heatmaps = net.export_model_structure()
-        print("Layer 1 after clustering: ", net.lif1.coordinates[:10])
         network_representation = NetworkRepresentation(layers, weight_matrices, heatmaps)
         export_filepath = config["filepaths"]["simple_clustered_network_representation_filepath"]
         network_representation.export_representation(export_filepath)
