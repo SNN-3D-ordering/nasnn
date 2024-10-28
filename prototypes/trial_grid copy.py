@@ -3,45 +3,87 @@ import matplotlib.pyplot as plt
 
 
 def map_to_grid(coordinates, grid_size):
+    """
+    Map a set of 2D coordinates onto a grid of specified size. The function
+    attempts to place each point in a grid cell, starting from the cell closest
+    to the centroid and finding the nearest free cell if needed.
+
+    Parameters:
+        coordinates (array-like): An array of 2D points, each representing a coordinate (x, y).
+        grid_size (int): The size of the grid (grid_size x grid_size).
+
+    Returns:
+        grid (np.array): A 2D array of the grid with indices of mapped coordinates.
+        mapped_coords (list of tuples): A list of tuples containing the grid center (x, y)
+                                        and the original index of the coordinate.
+    """
+    # Calculate the centroid of the input coordinates (mean along each dimension)
     centroid = np.mean(coordinates, axis=0)
 
-    # Determine the range of coordinates
+    # Calculate the Euclidean distance of each point to the centroid
+    distances_to_centroid = np.linalg.norm(coordinates - centroid, axis=1)
+    # Get indices of coordinates sorted by their distance to the centroid
+    sorted_indices = np.argsort(distances_to_centroid)
+
+    # Determine the min and max values along x and y axes to gauge range of coordinates
     min_x, min_y = np.min(coordinates, axis=0)
     max_x, max_y = np.max(coordinates, axis=0)
 
-    # Calculate the scaling factors based on the coordinate ranges
-    range_x = max_x - min_x
-    range_y = max_y - min_y
-
-    # Calculate distances and argsort
-    distances_to_centroid = np.linalg.norm(coordinates - centroid, axis=1)
-    sorted_indices = np.argsort(distances_to_centroid)
-
-    # Initialize grid definition
+    # Create grid ranges dynamically based on min and max values of coordinates
     grid_x = np.linspace(min_x, max_x, grid_size + 1)
     grid_y = np.linspace(min_y, max_y, grid_size + 1)
+
+    # Initialize a grid array with -1 indicating empty cells
     grid = np.full((grid_size, grid_size), -1)
 
+    # List to store the map of coordinates to grid locations
     mapped_coords = []
 
-    # Normalize the coordinate mapping to fit the grid dimensions and start placement
+    # Calculate the halfway point of the grid size
+    half_grid = grid_size // 2
+
+    # Loop through the indices of points sorted by proximity to the centroid
     for idx in sorted_indices:
         point = coordinates[idx]
 
-        # Map coordinates to grid indices via normalization
-        rel_x = int((point[0] - min_x) / range_x * (grid_size - 1))
-        rel_y = int((point[1] - min_y) / range_y * (grid_size - 1))
+        # Compute initial grid cell coordinates based on the transformed position about the centroid
+        rel_x = min(
+            max(
+                int(
+                    (point[0] - centroid[0]) / ((max_x - min_x) / grid_size) + half_grid
+                ),
+                0,
+            ),
+            grid_size - 1,
+        )
+        rel_y = min(
+            max(
+                int(
+                    (point[1] - centroid[1]) / ((max_y - min_y) / grid_size) + half_grid
+                ),
+                0,
+            ),
+            grid_size - 1,
+        )
 
         # Attempt to place it at calculated cell, else find nearest free cell
         placed = False
+
+        # Loop over the range of possible offsets (distance from the initial target cell)
         for offset in range(grid_size):
+            # Iterate over horizontal offsets (-offset to +offset)
             for dx in range(-offset, offset + 1):
+                # Iterate over vertical offsets (-offset to +offset)
                 for dy in range(-offset, offset + 1):
                     row_idx, col_idx = (rel_y + dy) % grid_size, (
                         rel_x + dx
                     ) % grid_size
+
+                    # If the cell is empty, place the point there
                     if grid[row_idx, col_idx] == -1:
                         grid[row_idx, col_idx] = idx
+
+                        # Calculate the center of the grid cell for final mapped coordinates
                         mapped_coords.append(
                             (
                                 grid_x[col_idx] + grid_x[1] / 2,
@@ -49,6 +91,7 @@ def map_to_grid(coordinates, grid_size):
                                 idx,
                             )
                         )
+                        # Mark as placed and break out of loops
                         placed = True
                         break
                 if placed:
@@ -149,7 +192,6 @@ coordinates = np.array(
         [90.8, 90.1],
     ]
 )
-
 
 grid_size = 10
 mapped_grid, mapped_coords = map_to_grid(coordinates, grid_size)

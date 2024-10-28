@@ -91,57 +91,101 @@ def make_2d_grid_from_1d_list(list_1d):
 
 def map_to_2d_grid_row_wise(coordinates, grid_size):
     """
-    Maps 2D coordinates to a 2D grid, starting from the center and filling in a spiral.
+    Map a set of 2D coordinates onto a grid of specified size. The function
+    attempts to place each point in a grid cell, starting from the cell closest
+    to the centroid and finding the nearest free cell if needed.
 
-    Args:
-        coordinates (np.ndarray): Array of 2D coordinates.
-        grid_size (tuple): Size of the grid (rows, cols).
+    Parameters:
+        coordinates (array-like): An array of 2D points, each representing a coordinate (x, y).
+        grid_size (int): The size of the grid (grid_size x grid_size).
 
     Returns:
-        np.ndarray: 2D grid with neuron indices indexed spirally from the center.
+        grid (np.array): A 2D array of the grid with indices of mapped coordinates.
+        mapped_coords (list of tuples): A list of tuples containing the grid center (x, y)
+                                        and the original index of the coordinate.
     """
-    num_neurons = coordinates.shape[0]
+    # Calculate the centroid of the input coordinates (mean along each dimension)
+    centroid = np.mean(coordinates, axis=0)
 
-    # Calculate the center of the coordinates
-    center = np.mean(coordinates, axis=0)
+    # Calculate the Euclidean distance of each point to the centroid
+    distances_to_centroid = np.linalg.norm(coordinates - centroid, axis=1)
+    # Get indices of coordinates sorted by their distance to the centroid
+    sorted_indices = np.argsort(distances_to_centroid)
 
-    # Calculate distance from center for each point and sort based on it
-    distances = np.linalg.norm(coordinates - center, axis=1)
-    sorted_indices = np.argsort(distances)
+    # Determine the min and max values along x and y axes to gauge range of coordinates
+    min_x, min_y = np.min(coordinates, axis=0)
+    max_x, max_y = np.max(coordinates, axis=0)
 
-    # Initialize grid with -1 (empty)
-    grid = np.zeros(grid_size, dtype=int) - 1
+    # Create grid ranges dynamically based on min and max values of coordinates
+    grid_x = np.linspace(min_x, max_x, grid_size + 1)
+    grid_y = np.linspace(min_y, max_y, grid_size + 1)
 
-    # Determine the center of the grid
-    mid_row = grid_size[0] // 2
-    mid_col = grid_size[1] // 2
+    # Initialize a grid array with -1 indicating empty cells
+    grid = np.full((grid_size, grid_size), -1)
 
-    # Directions for spiral (right, down, left, up)
-    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-    dir_idx = 0  # Start with the 'right' direction
+    # List to store the map of coordinates to grid locations
+    mapped_coords = []
 
-    # Initialize the starting point in the center of the grid
-    row, col = mid_row, mid_col
+    # Calculate the halfway point of the grid size
+    half_grid = grid_size // 2
 
-    # Place neurons in the grid following the spiral order
+    # Loop through the indices of points sorted by proximity to the centroid
     for idx in sorted_indices:
-        grid[row, col] = idx
-        next_row = row + directions[dir_idx][0]
-        next_col = col + directions[dir_idx][1]
+        point = coordinates[idx]
 
-        # Check if the new position is within the grid and empty; else, change direction
-        if not (
-            0 <= next_row < grid_size[0]
-            and 0 <= next_col < grid_size[1]
-            and grid[next_row, next_col] == -1
-        ):
-            dir_idx = (dir_idx + 1) % 4  # Change direction
-            next_row = row + directions[dir_idx][0]
-            next_col = col + directions[dir_idx][1]
+        # Compute initial grid cell coordinates based on the transformed position about the centroid
+        rel_x = min(
+            max(
+                int(
+                    (point[0] - centroid[0]) / ((max_x - min_x) / grid_size) + half_grid
+                ),
+                0,
+            ),
+            grid_size - 1,
+        )
+        rel_y = min(
+            max(
+                int(
+                    (point[1] - centroid[1]) / ((max_y - min_y) / grid_size) + half_grid
+                ),
+                0,
+            ),
+            grid_size - 1,
+        )
 
-        # Move to the next cell in the spiral
-        row, col = next_row, next_col
+        # Attempt to place it at calculated cell, else find nearest free cell
+        placed = False
 
+        # Loop over the range of possible offsets (distance from the initial target cell)
+        for offset in range(grid_size):
+            # Iterate over horizontal offsets (-offset to +offset)
+            for dx in range(-offset, offset + 1):
+                # Iterate over vertical offsets (-offset to +offset)
+                for dy in range(-offset, offset + 1):
+                    row_idx, col_idx = (rel_y + dy) % grid_size, (
+                        rel_x + dx
+                    ) % grid_size
+
+                    # If the cell is empty, place the point there
+                    if grid[row_idx, col_idx] == -1:
+                        grid[row_idx, col_idx] = idx
+
+                        # Calculate the center of the grid cell for final mapped coordinates
+                        mapped_coords.append(
+                            (
+                                grid_x[col_idx] + grid_x[1] / 2,
+                                grid_y[row_idx] + grid_y[1] / 2,
+                                idx,
+                            )
+                        )
+                        # Mark as placed and break out of loops
+                        placed = True
+                        break
+                if placed:
+                    break
+            if placed:
+                break
+    print(grid)
     return grid
 
 
