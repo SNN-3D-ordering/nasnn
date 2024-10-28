@@ -88,7 +88,8 @@ def make_2d_grid_from_1d_list(list_1d):
 
     return grid
 
-    # def map_to_2d_grid_spiral_center(coordinates, grid_size):
+
+def map_to_2d_grid_row_wise(coordinates, grid_size):
     """
     Maps 2D coordinates to a 2D grid, starting from the center and filling in a spiral.
 

@@ -54,17 +54,17 @@ class NetworkRepresentation:
             "layer_dimensions": [layer.shape for layer in self.layers],
         }
 
-        # Convert tensors to lists for JSON serialization
+        # Convert tensors to lists for JSON serialization, if they are not already lists
         heatmap_lists = [
-            heatmap.tolist() if heatmap is not None else None
+            heatmap.tolist() if not isinstance(heatmap, list) and heatmap is not None else heatmap
             for heatmap in self.heatmaps
         ]
-
+        
         weight_matrix_lists = [
-            weight_matrix.tolist() if weight_matrix is not None else None
+            weight_matrix.tolist() if not isinstance(weight_matrix, list) and weight_matrix is not None else weight_matrix
             for weight_matrix in self.weight_matrices
         ]
-
+        
         layer_lists = [layer.tolist() for layer in self.layers]
 
         representation = {
