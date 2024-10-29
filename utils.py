@@ -64,32 +64,9 @@ def make_2d_grid_from_1d_list(list_1d):
 
     return grid_2d.reshape(int(np.sqrt(next_square)), int(np.sqrt(next_square)))
 
-    # def map_to_2d_grid_row_wise(coordinates, grid_size):
-    """
-    Maps 2D coordinates to a 2D grid.
-
-    Args:
-        coordinates (np.ndarray): Array of 2D coordinates.
-        grid_size (tuple): Size of the grid (rows, cols).
-
-    Returns:
-        np.ndarray: 2D grid with neuron indices.
-    """
-    num_neurons = coordinates.shape[0]
-    sorted_indices = np.argsort(
-        coordinates[:, 0]
-    )  # Sort by x-coordinate TODO build proper sorting
-    grid = np.zeros(grid_size, dtype=int) - 1  # Initialize grid with -1 (empty)
-
-    for idx, neuron_idx in enumerate(sorted_indices):
-        row = idx // grid_size[1]
-        col = idx % grid_size[1]
-        grid[row, col] = neuron_idx
-
-    return grid
 
 
-def map_to_2d_grid_row_wise(coordinates, grid_size):
+def make_grid_from_coordinates_radius_based(coordinates):
     """
     Map a set of 2D coordinates onto a grid of specified size. The function
     attempts to place each point in a grid cell, starting from the cell closest
@@ -104,6 +81,8 @@ def map_to_2d_grid_row_wise(coordinates, grid_size):
         mapped_coords (list of tuples): A list of tuples containing the grid center (x, y)
                                         and the original index of the coordinate.
     """
+
+    grid_size = convert_layer_size_to_grid_size(len(coordinates))
     rows, cols = grid_size
     # Calculate the centroid of the input coordinates (mean along each dimension)
     centroid = np.mean(coordinates, axis=0)
@@ -185,7 +164,7 @@ def map_to_2d_grid_row_wise(coordinates, grid_size):
     return grid
 
 
-def make_grid_from_coordinates(coordinates, pad_value=-1):
+def make_grid_from_coordinates_linear(coordinates, pad_value=-1):
     """
     Take a set of continuous values, generate a 2d grid off them.
     """
@@ -210,66 +189,6 @@ def make_grid_from_coordinates(coordinates, pad_value=-1):
     # Write to grid
     for row_idx, sublist in enumerate(reversed(rows)):
         grid[row_idx, : len(sublist)] = sublist
-
-    return grid
-
-    # def make_2d_grid_from_1d_list(coordinates, grid_size):
-    """
-    Maps neurons to a uniform grid ensuring a regular distance between each.
-
-    Args:
-        coordinates (np.ndarray): Array of 2D coordinates of neurons.
-        grid_size (tuple): Size of the grid (rows, cols).
-
-    Returns:
-        np.ndarray: 2D grid with neuron indices filling the grid uniformly.
-    """
-    num_neurons = coordinates.shape[0]
-
-    # Number of grid positions must be at least equal to number of neurons
-    if grid_size[0] * grid_size[1] < num_neurons:
-        raise ValueError("Grid is too small for the number of neurons.")
-
-    # Calculate the center neuron according to original coordinates
-    center = np.mean(coordinates, axis=0)
-    distances = np.linalg.norm(coordinates - center, axis=1)
-    center_index = np.argmin(distances)
-
-    # Create a list of neuron indices
-    neuron_indices = list(range(num_neurons))
-
-    # Sort neuron indices to put center_index at first
-    neuron_indices.remove(center_index)
-    neuron_indices = [center_index] + neuron_indices
-
-    # Create grid and initialize with -1 (empty)
-    grid = np.zeros(grid_size, dtype=int) - 1
-
-    # Determine grid center
-    mid_row = grid_size[0] // 2
-    mid_col = grid_size[1] // 2
-
-    # Calculate step sizes based on grid size and number of neurons
-    num_rows_available = min(grid_size[0], int(np.ceil(np.sqrt(num_neurons))))
-    num_cols_available = min(grid_size[1], int(np.ceil(np.sqrt(num_neurons))))
-
-    # Generate positions in the grid
-    positions = [
-        (i, j) for i in range(num_rows_available) for j in range(num_cols_available)
-    ]
-
-    # Shift positions to start from grid center
-    start_pos_idx = len(positions) // 2
-    centered_positions = [
-        (r + mid_row - num_rows_available // 2, c + mid_col - num_cols_available // 2)
-        for r, c in positions
-    ]
-
-    # Assign neurons to grid positions
-    for idx, pos in zip(neuron_indices, centered_positions):
-        r, c = pos
-        if 0 <= r < grid_size[0] and 0 <= c < grid_size[1]:
-            grid[r, c] = idx
 
     return grid
 
@@ -323,7 +242,7 @@ def convert_layer_size_to_grid_size(layer_size):
     sqrt_layer_size = int(np.ceil(np.sqrt(layer_size)))
     # Verify that sqrt_layer_size^2 >= layer_size
     if sqrt_layer_size**2 < layer_size:
-        raise ValueError("Layer size is not a square number")
+        print("Converting layer size to grid size: Layer size is not a square number")
     return sqrt_layer_size, sqrt_layer_size
 
 
@@ -533,14 +452,13 @@ def convert_number_to_human_readable(number):
     Returns:
         str: The human-readable number.
     """
-    return number  # TODO handle tuples
     number = float(number)
 
-    if number < 1e3:
+    if abs(number) < 1e3:
         return str(number)
-    elif number < 1e6:
+    elif abs(number) < 1e6:
         return f"{number/1e3:.1f}K"
-    elif number < 1e9:
+    elif abs(number) < 1e9:
         return f"{number/1e6:.1f}M"
     else:
         return f"{number/1e9:.1f}B"
@@ -556,7 +474,6 @@ def convert_number_to_scientific_notation(number):
     Returns:
         str: The number in scientific notation.
     """
-    return number  # TODO handle tuples
     return "{:.2e}".format(number)
 
 

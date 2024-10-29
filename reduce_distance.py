@@ -152,12 +152,12 @@ def undo_align_layer_sizes(grids):
     return unpadded_grids
 
 
-def simulated_annealing(rank_map1, rank_map2, layer2, kernel_size=3):
+def simulated_annealing(rank_map1, rank_map2, layer2, kernel_size=3, num_swaps=5):
     # TODO verify implementation
     # initialize the temperature
-    temperature = 1.0
+    temperature = 10.0
     temperature_min = 0.00001
-    alpha = 0.95
+    alpha = 0.9
 
     # initialize the current state
     current_state = rank_map2
@@ -171,24 +171,24 @@ def simulated_annealing(rank_map1, rank_map2, layer2, kernel_size=3):
     valid_indices2 = np.argwhere(rank_map2 != -1)
 
     while temperature > temperature_min:
-        # generate a new state by shuffling the existing values (select two random positions and swap them)
+        # generate a new state by shuffling the existing values (select multiple random positions and swap them)
         new_state = np.copy(current_state)
-        """i1, j1 = np.random.randint(0, new_state.shape[0]), np.random.randint(
-            0, new_state.shape[1]
-        )
-        i2, j2 = np.random.randint(0, new_state.shape[0]), np.random.randint(
-            0, new_state.shape[1]
-        )"""
+        new_layer2 = np.copy(layer2)
 
-        # Choose two different valid index positions to swap
-        idx1, idx2 = np.random.choice(len(valid_indices2), size=2, replace=False)
+        # Perform multiple swaps
+        for _ in range(num_swaps):
+            # Choose two different valid index positions to swap
+            idx1, idx2 = np.random.choice(len(valid_indices2), size=2, replace=False)
 
-        # Get the actual indices in rank_map2 from valid_indices2
-        (i1, j1), (i2, j2) = valid_indices2[idx1], valid_indices2[idx2]
+            # Get the actual indices in rank_map2 from valid_indices2
+            (i1, j1), (i2, j2) = valid_indices2[idx1], valid_indices2[idx2]
 
-        new_state[i1, j1], new_state[i2, j2] = new_state[i2, j2], new_state[i1, j1]
-        # also swap the values in the layer
-        layer2[i1, j1], layer2[i2, j2] = layer2[i2, j2], layer2[i1, j1]
+            # Swap in new_state and new_layer2
+            new_state[i1, j1], new_state[i2, j2] = new_state[i2, j2], new_state[i1, j1]
+            new_layer2[i1, j1], new_layer2[i2, j2] = (
+                new_layer2[i2, j2],
+                new_layer2[i1, j1],
+            )
 
         # compute the new score
         new_score = compute_similarity_score_kernel(rank_map1, new_state, kernel_size)
@@ -197,6 +197,7 @@ def simulated_annealing(rank_map1, rank_map2, layer2, kernel_size=3):
         if new_score > current_score:
             current_state = new_state
             current_score = new_score
+            layer2 = new_layer2  # Update layer2 with the new state
             if new_score > best_score:
                 best_state = new_state
                 best_score = new_score
@@ -205,6 +206,7 @@ def simulated_annealing(rank_map1, rank_map2, layer2, kernel_size=3):
             if np.random.rand() < p:
                 current_state = new_state
                 current_score = new_score
+                layer2 = new_layer2  # Update layer2 with the new state
 
         # decrease the temperature
         temperature *= alpha
@@ -220,13 +222,10 @@ def reduce_distance(config):
         [consecutive_padding_amount(rank_map) for rank_map in rank_maps]
     )
 
-    for map in rank_maps:
-        print(map)
-
     # reduce the distance between the layers
     for i in range(len(rank_maps) - 1):
 
-        curr_score = (compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]),)
+        curr_score = compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1])
 
         rank_maps[i + 1] = simulated_annealing(
             rank_maps[i],
@@ -234,7 +233,7 @@ def reduce_distance(config):
             layers[i + 1],
             kernel_size=max_consecutive_pads,
         )  # Sorting of layers happens here
-        new_score = (compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1]),)
+        new_score = compute_similarity_score_kernel(rank_maps[i], rank_maps[i + 1])
         print(
             "Sim. Annealing between layers",
             i,
@@ -254,7 +253,7 @@ def reduce_distance(config):
 
 def cluster_advanced(config):
     clustered_layers = reduce_distance(config)
-    # clustered_layers = [layer.tolist() for layer in clustered_layers]
+    print("Clustering done. Writing...")
 
     filepath_unclustered = config["filepaths"]["network_representation_filepath"]
     filepath_clustered = config["filepaths"][

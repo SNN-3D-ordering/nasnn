@@ -128,6 +128,7 @@ class Net(nn.Module):
             self.heatmaps[4] += heatmap4
             self.heatmaps[5] += heatmap5
             self.heatmaps[6] += heatmap6
+
     
         if self.record_spike_times:
             self.activations.append([activations0, activations1, activations2, activations3, activations4, activations5, activations6])

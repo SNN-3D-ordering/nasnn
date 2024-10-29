@@ -2,14 +2,14 @@ import snntorch as snn
 import torch
 import numpy as np
 import json
-from utils import map_to_2d_grid_row_wise, make_grid_from_coordinates
+from utils import make_grid_from_coordinates_linear, make_grid_from_coordinates_radius_based
 from utils import map_to_1d_list_row_wise
 from utils import convert_layer_size_to_grid_size
 
 
 class CustomLeaky(snn.Leaky):
     def __init__(self, beta, input_size):
-        super().__init__(beta=beta)
+        super().__init__(beta=beta, threshold=1.5)
         self.num_neurons = input_size
         self.grid_dims = convert_layer_size_to_grid_size(input_size)
         self.coordinates = self.initialize_coordinates()
@@ -114,8 +114,8 @@ class CustomLeaky(snn.Leaky):
             np.ndarray: 2d grid with neuron indices.
         """
         coordinates = self.coordinates.cpu().numpy()
-        #grid = map_to_2d_grid_row_wise(coordinates, self.grid_dims)
-        grid = make_grid_from_coordinates(coordinates)
+        #grid = make_grid_from_coordinates_radius_based(coordinates)
+        grid = make_grid_from_coordinates_linear(coordinates)
         return grid
 
     def return_1d_list(self):

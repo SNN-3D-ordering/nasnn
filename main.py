@@ -66,7 +66,7 @@ train_loader, test_loader = get_data_loaders(
 # else:
 #    device = torch.device("cpu")
 
-# Use CPU for now (this is because the indices and tensors are not on the same device) TODO fix this
+# Use CPU for now (this is because the indices and tensors are not on the same device) 
 device = torch.device("cpu")
 net = Net(
     model_params["num_inputs"],
@@ -104,15 +104,10 @@ if args.eval:
     # Load the trained model
     net.load_state_dict(torch.load(config["filepaths"]["model_filepath"]))
 
-    # Evaluate model
+    # Evaluate model and record heatmaps
     print("Evaluating model accuracy...")
     total, correct = test(net, test_loader, device, config)
     print(f"Accuracy: {correct/total*100:.2f}%")
-
-    # Measure network
-    print("Measuring network distance...")
-    total_distance = measure_network(config["filepaths"]["network_representation_filepath"])
-    print(f"Total weighted Manhattan distance for the entire network: {total_distance}")
 
     # Run simple clustering
     print("Running simple clustering...")
@@ -122,15 +117,21 @@ if args.eval:
     print("Running advanced clustering...")
     cluster_advanced(config)
 
-    # Measure simple clustered network
-    total_distance = measure_network(config["filepaths"]["simple_clustered_network_representation_filepath"])
-    print(f"Total weighted Manhattan distance for the entire network after clustering: {total_distance}")
+    # Measure network
+    print("Measuring base & clustered network distances...")
+    base_distance = measure_network(config["filepaths"]["network_representation_filepath"])
+    simple_clustered_distance = measure_network(config["filepaths"]["simple_clustered_network_representation_filepath"])
+    advanced_clustered_distance = measure_network(config["filepaths"]["advanced_clustered_network_representation_filepath"])
 
-    # Measure advanced clustered network
-    total_distance = measure_network(config["filepaths"]["advanced_clustered_network_representation_filepath"])
-    print(f"Total weighted Manhattan distance for the entire network after advanced clustering: {total_distance}")
-    
-    # Record spike times for 100 batches
+    # calculate the percentages by which the distances have been reduced
+    simple_reduction = (base_distance - simple_clustered_distance) / base_distance * 100
+    advanced_reduction = (base_distance - advanced_clustered_distance) / base_distance * 100
+
+    print(f"Base network distance: {base_distance}")
+    print(f"Simple clustered network distance: {simple_clustered_distance} (reduced by {simple_reduction:.2f}%)")
+    print(f"Advanced clustered network distance: {advanced_clustered_distance} (reduced by {advanced_reduction:.2f}%)")
+
+    #  Record spike times for 100 batches
     # print("Recording spike times...")
     # record(net, test_loader, device, config, record_batches=10)
 

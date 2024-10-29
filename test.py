@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 
 def test(net, test_loader, device, config, max_steps=None):
+    # Evaluate model and record heatmaps
     total = 0
     correct = 0
 
@@ -46,6 +47,7 @@ import torch
 
 
 def record(net, test_loader, device, config, record_batches=None):
+    # Record spike times for 100 batches
     with torch.no_grad():
         net.eval()
         net.record_spike_times = True
