@@ -104,7 +104,7 @@ def cluster_simple(net, test_loader, device, config, max_steps=None):
         else:
             visualize_neuron_positions_color(net.lif1)
 
-        print("Clustering done. Writing...")
+        print(f"Clustering done. Writing to {config['filepaths']['simple_clustered_network_representation_filepath']}...")
         layers, weight_matrices, heatmaps = net.export_model_structure()
         network_representation = NetworkRepresentation(layers, weight_matrices, heatmaps)
         export_filepath = config["filepaths"]["simple_clustered_network_representation_filepath"]
