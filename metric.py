@@ -5,6 +5,7 @@ from utils import (
     convert_number_to_human_readable,
     convert_number_to_scientific_notation,
 )
+from utils import visualize_heatmap, visualize_layer_with_heatmap
 import numpy as np
 
 
@@ -36,6 +37,9 @@ def calculate_distance_between_layers(data, layer_idx):
     next_layer_heatmap = heatmaps[layer_idx + 1]
     weight_matrix = weight_matrices[layer_idx]
 
+    visualize_layer_with_heatmap(
+        current_layer, current_layer_heatmap, title=f"Layer {layer_idx}"
+    )
     current_shape = layer_shapes[layer_idx]
     next_shape = layer_shapes[layer_idx + 1]
 
@@ -197,6 +201,8 @@ def measure_network(filepath):
     total_distance = calculate_total_distance(data)
 
     return total_distance
+
+
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import scipy as sp
 import snntorch as snn
 import torch
 import torch.nn as nn
@@ -49,21 +50,21 @@ class Net(nn.Module):
     
         # Record heatmaps
         if self.record_heatmap:
-            heatmap0 = torch.zeros((self.fc1.in_features,), device=x.device)
+            heatmap0 = torch.zeros((self.fc1.in_features,), device=x.device, dtype=torch.int64)
             self.heatmaps.append(heatmap0)
-            heatmap1 = torch.zeros((self.fc1.out_features,), device=x.device)
+            heatmap1 = torch.zeros((self.fc1.out_features,), device=x.device, dtype=torch.int64)
             self.heatmaps.append(heatmap1)
-            heatmap2 = torch.zeros((self.fc2.out_features,), device=x.device)
+            heatmap2 = torch.zeros((self.fc2.out_features,), device=x.device, dtype=torch.int64)
             self.heatmaps.append(heatmap2)
-            heatmap3 = torch.zeros((self.fc3.out_features,), device=x.device)
+            heatmap3 = torch.zeros((self.fc3.out_features,), device=x.device, dtype=torch.int64)
             self.heatmaps.append(heatmap3)
-            heatmap4 = torch.zeros((self.fc4.out_features,), device=x.device)
+            heatmap4 = torch.zeros((self.fc4.out_features,), device=x.device, dtype=torch.int64)
             self.heatmaps.append(heatmap4)
-            heatmap5 = torch.zeros((self.fc5.out_features,), device=x.device)
+            heatmap5 = torch.zeros((self.fc5.out_features,), device=x.device, dtype=torch.int64)
             self.heatmaps.append(heatmap5)
-            heatmap6 = torch.zeros((self.fc6.out_features,), device=x.device)
-            self.heatmaps.append(heatmap6)
-    
+            heatmap6 = torch.zeros((self.fc6.out_features,), device=x.device, dtype=torch.int64)
+            self.heatmaps.append(heatmap6)      
+              
         if self.record_spike_times:
             activations0 = []
             activations1 = []
@@ -99,13 +100,13 @@ class Net(nn.Module):
             spk6, mem6 = self.lif6(cur6, mem6, self.current_step, self.fc6.weight.t())
     
             if self.record_heatmap:
-                heatmap0 += x.sum(dim=0)
-                heatmap1 += spk1.sum(dim=0)
-                heatmap2 += spk2.sum(dim=0)
-                heatmap3 += spk3.sum(dim=0)
-                heatmap4 += spk4.sum(dim=0)
-                heatmap5 += spk5.sum(dim=0)
-                heatmap6 += spk6.sum(dim=0)
+                heatmap0 += x.sum(dim=0).int()
+                heatmap1 += spk1.sum(dim=0).int()
+                heatmap2 += spk2.sum(dim=0).int()
+                heatmap3 += spk3.sum(dim=0).int()
+                heatmap4 += spk4.sum(dim=0).int()
+                heatmap5 += spk5.sum(dim=0).int()
+                heatmap6 += spk6.sum(dim=0).int()
     
             if self.record_spike_times:
                 activations0 += x.sum(dim=0)

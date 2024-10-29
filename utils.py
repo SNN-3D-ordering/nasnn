@@ -465,6 +465,44 @@ def visualize_heatmaps(heatmaps):
         visualize_tensor(heatmap)
 
 
+def visualize_heatmap(heatmap, title="Heatmap"):
+    # a function that takes a 1d heatmap and visualizes it as a 2d grid
+    heatmap = np.array(heatmap)
+    # normalize heatmap
+    heatmap = (heatmap - heatmap.min()) / (heatmap.max() - heatmap.min())
+
+    # make heatmap square
+    heatmap = make_2d_grid_from_1d_list(heatmap)
+
+    # visualize heatmap
+    plt.imshow(heatmap, cmap="hot")
+    plt.colorbar()
+    plt.title(title)
+    plt.show()
+
+
+def visualize_layer_with_heatmap(layer, heatmap, title="Layer with Heatmap"):
+    # iterate over the layer grid and set the value to the corresponding value in the heatmap
+    heatmap = np.array(heatmap)
+    heatmap = (heatmap - heatmap.min()) / (
+        heatmap.max() - heatmap.min()
+    )  # TODO ignore -1
+
+    aligned_heatmap = np.zeros_like(layer, dtype=float)
+    # iterate over the layer
+    for i in range(layer.size):
+        aligned_heatmap[i] = heatmap[layer[i]]
+
+    # make layer square
+    aligned_heatmap = make_2d_grid_from_1d_list(aligned_heatmap)
+
+    # visualize layer with heatmap
+    plt.imshow(aligned_heatmap, cmap="hot")
+    plt.colorbar()
+    plt.title(title)
+    plt.show()
+
+
 def visualize_tensor(tensor):
     """Visualize the values of a tensor as a bar chart."""
     # Convert tensor to numpy array
@@ -495,6 +533,9 @@ def convert_number_to_human_readable(number):
     Returns:
         str: The human-readable number.
     """
+    return number  # TODO handle tuples
+    number = float(number)
+
     if number < 1e3:
         return str(number)
     elif number < 1e6:
@@ -515,6 +556,7 @@ def convert_number_to_scientific_notation(number):
     Returns:
         str: The number in scientific notation.
     """
+    return number  # TODO handle tuples
     return "{:.2e}".format(number)
 
 
