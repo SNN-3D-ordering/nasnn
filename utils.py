@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import os
 import uuid
 
-os.makedirs("results", exist_ok=True)
-
 
 def print_batch_accuracy(data, targets, net, batch_size, train=False):
     """
@@ -384,7 +382,7 @@ def visualize_neuron_positions_color(layer, spk_sum=None, title="Neuron Coordina
     plt.title(title)
     plt.xlabel("X Coordinate")
     plt.ylabel("Y Coordinate")
-    plt.savefig(f'plots/{title.replace(" ", "_")}.pdf')
+    plt.savefig(f'results/{title.replace(" ", "_")}.pdf')
     # plt.show()
     plt.close()
 
@@ -438,7 +436,7 @@ def visualize_neuron_positions_color_dual(
     cbar.set_label("Spike Sum")
 
     # Save the figure with a unique filename
-    plt.savefig(f"plots/Neuron_Positions_Comparison_{uuid.uuid4()}.pdf")
+    plt.savefig(f"results/Neuron_Positions_Comparison_{uuid.uuid4()}.pdf")
     # plt.show()
     plt.close()
 
@@ -462,7 +460,7 @@ def visualize_heatmap(heatmap, title="Heatmap"):
     plt.imshow(heatmap, cmap="hot")
     plt.colorbar()
     plt.title(title)
-    plt.savefig(f'plots/{title.replace(" ", "_")}.pdf')
+    plt.savefig(f'results/{title.replace(" ", "_")}.pdf')
     # plt.show()
     plt.close()
 
@@ -486,7 +484,7 @@ def visualize_layer_with_heatmap(layer, heatmap, title="Layer with Heatmap"):
     plt.imshow(aligned_heatmap, cmap="hot", aspect="auto")
     plt.colorbar()
     plt.title(title)
-    plt.savefig(f'plots/{title.replace(" ", "_")}.pdf')
+    plt.savefig(f'results/{title.replace(" ", "_")}.pdf')
     # plt.show()
     plt.close()  # Close the figure
 
@@ -509,7 +507,7 @@ def visualize_tensor(tensor, filename="visualize_tensor.pdf"):
     plt.title("Tensor Values")
 
     # Save the plot
-    plt.savefig(f"plots/{filename}")
+    plt.savefig(f"results/{filename}")
     plt.close()  # Close the plot to avoid overlapping
 
 
