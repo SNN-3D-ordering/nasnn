@@ -376,7 +376,7 @@ def visualize_neuron_positions_color(layer, spk_sum=None, title="Neuron Coordina
         colors = "b"  # Default color if spk_sum is not provided
 
     plt.scatter(
-        x_coords, y_coords, c=colors, cmap="viridis", s=100, edgecolor="k", alpha=0.5
+        x_coords, y_coords, c=colors, cmap="viridis_r", s=50, edgecolor="k", alpha=0.5
     )
     plt.colorbar(label="Spike Sum")
     plt.title(title)
