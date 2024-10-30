@@ -122,7 +122,7 @@ if args.eval:
 
     # Run advanced clustering
     print("Running advanced clustering...")
-    cluster_advanced(config)
+    # cluster_advanced(config)
 
     # Measure network
     print("Measuring base & clustered network distances...")
@@ -130,21 +130,21 @@ if args.eval:
         config["filepaths"]["network_representation_filepath"]
     )
     # simple_clustered_distance = measure_network(config["filepaths"]["simple_clustered_network_representation_filepath"])
-    advanced_clustered_distance = measure_network(
-        config["filepaths"]["advanced_clustered_network_representation_filepath"]
-    )
+    # advanced_clustered_distance = measure_network(
+    #    config["filepaths"]["advanced_clustered_network_representation_filepath"]
+    # )
 
     # calculate the percentages by which the distances have been reduced
     # simple_reduction = (base_distance - simple_clustered_distance) / base_distance * 100
-    advanced_reduction = (
-        (base_distance - advanced_clustered_distance) / base_distance * 100
-    )
+    # advanced_reduction = (
+    #    (base_distance - advanced_clustered_distance) / base_distance * 100
+    # )
 
     print(f"Base network distance: {base_distance}")
     # print(f"Simple clustered network distance: {simple_clustered_distance} (reduced by {simple_reduction:.2f}%)")
-    print(
-        f"Advanced clustered network distance: {advanced_clustered_distance} (reduced by {advanced_reduction:.2f}%)"
-    )
+    # print(
+    #    f"Advanced clustered network distance: {advanced_clustered_distance} (reduced by {advanced_reduction:.2f}%)"
+    # )
 
     # Record spike times for 10 batches
     # print("Recording spike times...")
@@ -171,7 +171,7 @@ if args.evalpruned:
 
     # Run advanced clustering
     print("Running advanced clustering...")
-    cluster_advanced(config, pruned)
+    # cluster_advanced(config, pruned)
 
     # Measure network #TODO update filepaths
     print("Measuring base & clustered network distances...")
@@ -181,23 +181,23 @@ if args.evalpruned:
     simple_clustered_distance = measure_network(
         config["filepaths"]["pruned_simple_clustered_network_representation_filepath"]
     )
-    advanced_clustered_distance = measure_network(
-        config["filepaths"]["pruned_advanced_clustered_network_representation_filepath"]
-    )
+    # advanced_clustered_distance = measure_network(
+    #    config["filepaths"]["pruned_advanced_clustered_network_representation_filepath"]
+    # )
 
     # calculate the percentages by which the distances have been reduced
     simple_reduction = (base_distance - simple_clustered_distance) / base_distance * 100
-    advanced_reduction = (
-        (base_distance - advanced_clustered_distance) / base_distance * 100
-    )
+    # advanced_reduction = (
+    #    (base_distance - advanced_clustered_distance) / base_distance * 100
+    # )
 
     print(f"Pruned base network distance: {base_distance}")
     print(
         f"Pruned simple clustered network distance: {simple_clustered_distance} (reduced by {simple_reduction:.2f}%)"
     )
-    print(
-        f"Pruned advanced clustered network distance: {advanced_clustered_distance} (reduced by {advanced_reduction:.2f}%)"
-    )
+    # print(
+    #    f"Pruned advanced clustered network distance: {advanced_clustered_distance} (reduced by {advanced_reduction:.2f}%)"
+    # )
 
     # Record spike times for 10 batches
     # print("Recording spike times...")
