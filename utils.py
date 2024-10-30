@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import os
+import uuid
 
 os.makedirs("plots", exist_ok=True)
 
@@ -360,7 +361,8 @@ def visualize_neuron_positions(net):
     """Visualize the 2D coordinates of the neurons in the network."""
     coordinates = net.lif1.coordinates.detach().numpy()
     plt.scatter(coordinates[:, 0], coordinates[:, 1])
-    plt.savefig("plots/visualize_neuron_positions.pdf")
+    # generate unique filename
+    plt.savefig(f"plots/visualize_neuron_positions_{uuid.uuid4()}.pdf")
     # plt.show()
     plt.close()
 
@@ -383,6 +385,60 @@ def visualize_neuron_positions_color(layer, spk_sum=None, title="Neuron Coordina
     plt.xlabel("X Coordinate")
     plt.ylabel("Y Coordinate")
     plt.savefig(f'plots/{title.replace(" ", "_")}.pdf')
+    # plt.show()
+    plt.close()
+
+
+import matplotlib.pyplot as plt
+
+
+def visualize_neuron_positions_color_dual(
+    layer1,
+    layer2,
+    spk_sum,
+    title1="Neuron Positions (Initialization)",
+    title2="Neuron Positions (Clustered)",
+):
+    """Visualize the 2D coordinates of the neurons in two layers with color-coded spike sums."""
+
+    # Extract coordinates for the first layer
+    x_coords1 = layer1.coordinates[:, 0].numpy()
+    y_coords1 = layer1.coordinates[:, 1].numpy()
+
+    # Extract coordinates for the second layer
+    x_coords2 = layer2.coordinates[:, 0].numpy()
+    y_coords2 = layer2.coordinates[:, 1].numpy()
+
+    # Use the provided spk_sum for coloring
+    colors = spk_sum.numpy()
+
+    # Create a figure with two subplots
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+    # Plot the first layer
+    scatter1 = axes[0].scatter(
+        x_coords1, y_coords1, c=colors, cmap="viridis", s=50, edgecolor="k", alpha=0.5
+    )
+    axes[0].set_title(title1)
+    axes[0].set_xlabel("X Coordinate")
+    axes[0].set_ylabel("Y Coordinate")
+
+    # Plot the second layer
+    scatter2 = axes[1].scatter(
+        x_coords2, y_coords2, c=colors, cmap="viridis", s=50, edgecolor="k", alpha=0.5
+    )
+    axes[1].set_title(title2)
+    axes[1].set_xlabel("X Coordinate")
+    axes[1].set_ylabel("Y Coordinate")
+
+    # Add a single colorbar for both plots
+    cbar = fig.colorbar(
+        scatter1, ax=axes, orientation="vertical", fraction=0.02, pad=0.04
+    )
+    cbar.set_label("Spike Sum")
+
+    # Save the figure with a unique filename
+    plt.savefig(f"plots/Neuron_Positions_Comparison_{uuid.uuid4()}.pdf")
     # plt.show()
     plt.close()
 

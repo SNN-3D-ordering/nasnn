@@ -2,7 +2,7 @@
 # TODO: Array übertragen in json
 # TODO: weight matrices ==layer_connections in NetworkRepresentation
 import torch
-from utils import visualize_neuron_positions_color, visualize_heatmaps_as_barcharts
+from utils import visualize_neuron_positions_color_dual, visualize_heatmaps_as_barcharts
 from network_representation import NetworkRepresentation
 import numpy as np
 
@@ -34,7 +34,6 @@ def test(net, test_loader, device, config, pruned=False, max_steps=None):
     layers, weight_matrices, heatmaps = net.export_model_structure()
     network_representation = NetworkRepresentation(layers, weight_matrices, heatmaps)
 
-    visualize_neuron_positions_color(net.lif1)
     visualize_heatmaps_as_barcharts(heatmaps)
 
     if pruned:
@@ -93,6 +92,8 @@ def cluster_simple(net, test_loader, device, config, pruned=False, max_steps=Non
         net.eval()
         net.set_cluster_simple(True)
 
+        original_positions = net.lif1
+
         for step, (data, targets) in enumerate(test_loader):
             if max_steps is not None and step >= max_steps:
                 break
@@ -103,9 +104,11 @@ def cluster_simple(net, test_loader, device, config, pruned=False, max_steps=Non
             _, _ = net(data.view(data.size(0), -1))
 
         if net.heatmaps is not None:
-            visualize_neuron_positions_color(net.lif1, spk_sum=net.heatmaps[1])
-        else:
-            visualize_neuron_positions_color(net.lif1)
+            visualize_neuron_positions_color_dual(
+                original_positions, net.lif1, spk_sum=net.heatmaps[1]
+            )
+        # else:
+        #    visualize_neuron_positions_color(net.lif1)
 
         layers, weight_matrices, heatmaps = net.export_model_structure()
         network_representation = NetworkRepresentation(
