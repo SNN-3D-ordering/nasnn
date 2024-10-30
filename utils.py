@@ -507,4 +507,7 @@ def prune_weights(network, threshold):
     for name, param in network.named_parameters():
         if "weight" in name:
             with torch.no_grad():
-                param.abs_().lt_(threshold).mul_(0)
+                # Create a mask of weights below the threshold
+                mask = param.abs() < threshold
+                # Set weights below the threshold to zero
+                param[mask] = 0
