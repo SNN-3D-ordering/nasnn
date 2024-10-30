@@ -166,3 +166,4 @@ cython_debug/
 
 # model
 /data/model.pth
+.DS_Store
