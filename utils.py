@@ -362,6 +362,7 @@ def visualize_neuron_positions(net):
     plt.scatter(coordinates[:, 0], coordinates[:, 1])
     plt.savefig("plots/visualize_neuron_positions.pdf")
     # plt.show()
+    plt.close()
 
 
 def visualize_neuron_positions_color(layer, spk_sum=None, title="Neuron Coordinates"):
@@ -383,6 +384,7 @@ def visualize_neuron_positions_color(layer, spk_sum=None, title="Neuron Coordina
     plt.ylabel("Y Coordinate")
     plt.savefig(f'plots/{title.replace(" ", "_")}.pdf')
     # plt.show()
+    plt.close()
 
 
 def visualize_heatmaps_as_barcharts(heatmaps):
@@ -406,6 +408,7 @@ def visualize_heatmap(heatmap, title="Heatmap"):
     plt.title(title)
     plt.savefig(f'plots/{title.replace(" ", "_")}.pdf')
     # plt.show()
+    plt.close()
 
 
 def visualize_layer_with_heatmap(layer, heatmap, title="Layer with Heatmap"):
@@ -424,11 +427,12 @@ def visualize_layer_with_heatmap(layer, heatmap, title="Layer with Heatmap"):
     aligned_heatmap = make_2d_grid_from_1d_list(aligned_heatmap)
 
     # visualize layer with heatmap
-    plt.imshow(aligned_heatmap, cmap="hot")
+    plt.imshow(aligned_heatmap, cmap="hot", aspect="auto")
     plt.colorbar()
     plt.title(title)
     plt.savefig(f'plots/{title.replace(" ", "_")}.pdf')
     # plt.show()
+    plt.close()  # Close the figure
 
 
 def visualize_tensor(tensor, filename="visualize_tensor.pdf"):
