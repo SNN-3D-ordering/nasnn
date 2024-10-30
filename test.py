@@ -5,7 +5,7 @@ import torch
 from utils import visualize_neuron_positions_color_dual, visualize_heatmaps_as_barcharts
 from network_representation import NetworkRepresentation
 import numpy as np
-
+import copy
 import torch
 import matplotlib.pyplot as plt
 
@@ -92,7 +92,7 @@ def cluster_simple(net, test_loader, device, config, pruned=False, max_steps=Non
         net.eval()
         net.set_cluster_simple(True)
 
-        original_positions = net.lif1
+        lif1_copy = copy.deepcopy(net.lif1)
 
         for step, (data, targets) in enumerate(test_loader):
             if max_steps is not None and step >= max_steps:
@@ -105,7 +105,7 @@ def cluster_simple(net, test_loader, device, config, pruned=False, max_steps=Non
 
         if net.heatmaps is not None:
             visualize_neuron_positions_color_dual(
-                original_positions, net.lif1, spk_sum=net.heatmaps[1]
+                lif1_copy, net.lif1, spk_sum=net.heatmaps[1]
             )
         # else:
         #    visualize_neuron_positions_color(net.lif1)

@@ -117,11 +117,11 @@ if args.eval:
     print(f"Accuracy: {correct/total*100:.2f}%")
 
     # Run simple clustering
-    # print("Running simple clustering...")
-    # cluster_simple(net, test_loader, device, config, max_steps=1000)
+    print("Running simple clustering...")
+    cluster_simple(net, test_loader, device, config, max_steps=1000)
 
     # Run advanced clustering
-    print("Running advanced clustering...")
+    # print("Running advanced clustering...")
     # cluster_advanced(config)
 
     # Measure network
@@ -170,7 +170,7 @@ if args.evalpruned:
     cluster_simple(net, test_loader, device, config, pruned, max_steps=1000)
 
     # Run advanced clustering
-    print("Running advanced clustering...")
+    # print("Running advanced clustering...")
     # cluster_advanced(config, pruned)
 
     # Measure network #TODO update filepaths
