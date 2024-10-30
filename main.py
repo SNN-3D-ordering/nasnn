@@ -5,6 +5,7 @@ from data import get_data_loaders
 from train import train_model
 from test import test, cluster_simple, record
 from utils import get_next_square_numbers
+from utils import prune_weights
 from reduce_distance import cluster_advanced
 import matplotlib.pyplot as plt
 import argparse
@@ -15,6 +16,12 @@ from metric import measure_network
 parser = argparse.ArgumentParser(description="Train or evaluate the model.")
 parser.add_argument("--train", "-t", action="store_true", help="Flag to run training")
 parser.add_argument("--eval", "-e", action="store_true", help="Flag to run evaluation")
+parser.add_argument(
+    "--evalpruned",
+    "-ep",
+    action="store_true",
+    help="Flag to run evaluation with pruned weights",
+)
 parser.add_argument(
     "--model-path", type=str, default="model.pth", help="Path to save/load the model"
 )
@@ -66,7 +73,7 @@ train_loader, test_loader = get_data_loaders(
 # else:
 #    device = torch.device("cpu")
 
-# Use CPU for now (this is because the indices and tensors are not on the same device) 
+# Use CPU for now (this is because the indices and tensors are not on the same device)
 device = torch.device("cpu")
 net = Net(
     model_params["num_inputs"],
@@ -110,8 +117,8 @@ if args.eval:
     print(f"Accuracy: {correct/total*100:.2f}%")
 
     # Run simple clustering
-    #print("Running simple clustering...")
-    #cluster_simple(net, test_loader, device, config, max_steps=1000)
+    # print("Running simple clustering...")
+    # cluster_simple(net, test_loader, device, config, max_steps=1000)
 
     # Run advanced clustering
     print("Running advanced clustering...")
@@ -119,21 +126,82 @@ if args.eval:
 
     # Measure network
     print("Measuring base & clustered network distances...")
-    base_distance = measure_network(config["filepaths"]["network_representation_filepath"])
-    #simple_clustered_distance = measure_network(config["filepaths"]["simple_clustered_network_representation_filepath"])
-    advanced_clustered_distance = measure_network(config["filepaths"]["advanced_clustered_network_representation_filepath"])
+    base_distance = measure_network(
+        config["filepaths"]["network_representation_filepath"]
+    )
+    # simple_clustered_distance = measure_network(config["filepaths"]["simple_clustered_network_representation_filepath"])
+    advanced_clustered_distance = measure_network(
+        config["filepaths"]["advanced_clustered_network_representation_filepath"]
+    )
 
     # calculate the percentages by which the distances have been reduced
-    #simple_reduction = (base_distance - simple_clustered_distance) / base_distance * 100
-    advanced_reduction = (base_distance - advanced_clustered_distance) / base_distance * 100
+    # simple_reduction = (base_distance - simple_clustered_distance) / base_distance * 100
+    advanced_reduction = (
+        (base_distance - advanced_clustered_distance) / base_distance * 100
+    )
 
     print(f"Base network distance: {base_distance}")
-    #print(f"Simple clustered network distance: {simple_clustered_distance} (reduced by {simple_reduction:.2f}%)")
-    print(f"Advanced clustered network distance: {advanced_clustered_distance} (reduced by {advanced_reduction:.2f}%)")
+    # print(f"Simple clustered network distance: {simple_clustered_distance} (reduced by {simple_reduction:.2f}%)")
+    print(
+        f"Advanced clustered network distance: {advanced_clustered_distance} (reduced by {advanced_reduction:.2f}%)"
+    )
 
-    #  Record spike times for 100 batches
+    # Record spike times for 10 batches
     # print("Recording spike times...")
     # record(net, test_loader, device, config, record_batches=10)
+
+
+if args.evalpruned:
+    # Load the trained model
+    net.load_state_dict(torch.load(config["filepaths"]["model_filepath"]))
+
+    # prune weights
+    threshold = 0.5
+    prune_weights(net, threshold)
+    pruned = True
+
+    # Evaluate model and record heatmaps
+    print("Evaluating model accuracy...")
+    total, correct = test(net, test_loader, device, config, pruned)
+    print(f"Accuracy: {correct/total*100:.2f}%")
+
+    # Run simple clustering
+    print("Running simple clustering...")
+    cluster_simple(net, test_loader, device, config, pruned, max_steps=1000)
+
+    # Run advanced clustering
+    print("Running advanced clustering...")
+    cluster_advanced(config, pruned)
+
+    # Measure network #TODO update filepaths
+    print("Measuring base & clustered network distances...")
+    base_distance = measure_network(
+        config["filepaths"]["pruned_network_representation_filepath"]
+    )
+    simple_clustered_distance = measure_network(
+        config["filepaths"]["pruned_simple_clustered_network_representation_filepath"]
+    )
+    advanced_clustered_distance = measure_network(
+        config["filepaths"]["pruned_advanced_clustered_network_representation_filepath"]
+    )
+
+    # calculate the percentages by which the distances have been reduced
+    simple_reduction = (base_distance - simple_clustered_distance) / base_distance * 100
+    advanced_reduction = (
+        (base_distance - advanced_clustered_distance) / base_distance * 100
+    )
+
+    print(f"Pruned base network distance: {base_distance}")
+    print(
+        f"Pruned simple clustered network distance: {simple_clustered_distance} (reduced by {simple_reduction:.2f}%)"
+    )
+    print(
+        f"Pruned advanced clustered network distance: {advanced_clustered_distance} (reduced by {advanced_reduction:.2f}%)"
+    )
+
+    # Record spike times for 10 batches
+    # print("Recording spike times...")
+    # record(net, test_loader, device, config, pruned, record_batches=10)
 
 if not args.train and not args.eval:
     print("Please specify either --train/-t or --eval/-e flag.")

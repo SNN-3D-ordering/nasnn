@@ -65,7 +65,6 @@ def make_2d_grid_from_1d_list(list_1d):
     return grid_2d.reshape(int(np.sqrt(next_square)), int(np.sqrt(next_square)))
 
 
-
 def make_grid_from_coordinates_radius_based(coordinates):
     """
     Map a set of 2D coordinates onto a grid of specified size. The function
@@ -495,3 +494,17 @@ def convert_tensors(obj):
         return {key: convert_tensors(value) for key, value in obj.items()}
     else:
         return obj
+
+
+def prune_weights(network, threshold):
+    """
+    Set all weights in the network that are below the threshold to zero.
+
+    Args:
+        network (nn.Module): The neural network to prune.
+        threshold (float): The threshold below which weights are set to zero.
+    """
+    for name, param in network.named_parameters():
+        if "weight" in name:
+            with torch.no_grad():
+                param.abs_().lt_(threshold).mul_(0)

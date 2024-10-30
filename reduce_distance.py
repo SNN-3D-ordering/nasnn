@@ -9,6 +9,7 @@ from utils import (
 )
 from utils import convert_number_to_human_readable
 from network_representation import NetworkRepresentation
+import torch
 
 
 def generate_rank_map(heatmap, epsilon=1e-5):
@@ -262,14 +263,21 @@ def reduce_distance(config):
     return layers
 
 
-def cluster_advanced(config):
+def cluster_advanced(config, pruned=False):
     clustered_layers = reduce_distance(config)
 
-    filepath_unclustered = config["filepaths"]["network_representation_filepath"]
-    filepath_clustered = config["filepaths"][
-        "advanced_clustered_network_representation_filepath"
-    ]
-    print(f"Clustering done. Writing to {filepath_clustered}...")
+    if pruned:
+        filepath_unclustered = config["filepaths"][
+            "simple_clustered_pruned_network_representation_filepath"
+        ]
+        filepath_clustered = config["filepaths"][
+            "advanced_clustered_pruned_network_representation_filepath"
+        ]
+    else:
+        filepath_unclustered = config["filepaths"]["network_representation_filepath"]
+        filepath_clustered = config["filepaths"][
+            "advanced_clustered_network_representation_filepath"
+        ]
 
     with open(filepath_unclustered) as file:
         network_unclustered = yaml.safe_load(file)
@@ -280,6 +288,8 @@ def cluster_advanced(config):
     network_representation = NetworkRepresentation(
         clustered_layers, weight_matrices, heatmaps
     )
+
+    print(f"Clustering done. Writing to {filepath_clustered}...")
     network_representation.export_representation(filepath_clustered)
 
 

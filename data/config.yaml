@@ -17,3 +17,7 @@ filepaths:
   simple_clustered_network_representation_filepath: "./exports/simple_clustered_network_representation.json"
   advanced_clustered_network_representation_filepath: "./exports/advanced_clustered_network_representation.json"
   network_activations_filepath: "./exports/network_activations.json"
+  pruned_network_representation_filepath: "./exports/pruned_network_representation.json"
+  pruned_simple_clustered_network_representation_filepath: "./exports/pruned_simple_clustered_network_representation.json"
+  pruned_advanced_clustered_network_representation_filepath: "./exports/pruned_advanced_clustered_network_representation.json"
+  pruned_network_activations_filepath: "./exports/pruned_network_activations.json"
