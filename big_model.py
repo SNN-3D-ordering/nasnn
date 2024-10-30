@@ -9,7 +9,7 @@ from utils import generate_square_grid_ascending
 
 class Net(nn.Module):
     def __init__(
-        self, num_inputs, num_hidden, num_outputs, num_steps, beta, threshold=1.0
+        self, num_inputs, num_hidden, num_outputs, num_steps, beta, threshold=2.0
     ):
         super().__init__()
         self.num_steps = num_steps
@@ -24,22 +24,22 @@ class Net(nn.Module):
         self.input_grid = generate_square_grid_ascending(num_inputs)
 
         self.fc1 = nn.Linear(num_inputs, num_hidden)
-        self.lif1 = CustomLeaky(beta=beta, input_size=num_hidden, threshold=1.0)
+        self.lif1 = CustomLeaky(beta=beta, input_size=num_hidden, threshold=threshold)
 
         self.fc2 = nn.Linear(num_hidden, num_hidden)
-        self.lif2 = CustomLeaky(beta=beta, input_size=num_hidden, threshold=1.0)
+        self.lif2 = CustomLeaky(beta=beta, input_size=num_hidden, threshold=threshold)
 
         self.fc3 = nn.Linear(num_hidden, num_hidden)
-        self.lif3 = CustomLeaky(beta=beta, input_size=num_hidden, threshold=1.0)
+        self.lif3 = CustomLeaky(beta=beta, input_size=num_hidden, threshold=threshold)
 
         self.fc4 = nn.Linear(num_hidden, num_hidden)
-        self.lif4 = CustomLeaky(beta=beta, input_size=num_hidden, threshold=1.0)
+        self.lif4 = CustomLeaky(beta=beta, input_size=num_hidden, threshold=threshold)
 
         self.fc5 = nn.Linear(num_hidden, num_hidden)
-        self.lif5 = CustomLeaky(beta=beta, input_size=num_hidden, threshold=1.0)
+        self.lif5 = CustomLeaky(beta=beta, input_size=num_hidden, threshold=threshold)
 
         self.fc6 = nn.Linear(num_hidden, num_outputs)
-        self.lif6 = CustomLeaky(beta=beta, input_size=num_outputs, threshold=1.0)
+        self.lif6 = CustomLeaky(beta=beta, input_size=num_outputs, threshold=threshold)
 
     def forward(self, x):
         # Initialize hidden states at t=0

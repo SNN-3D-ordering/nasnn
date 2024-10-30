@@ -485,7 +485,7 @@ def visualize_layer_with_heatmap(layer, heatmap, title="Layer with Heatmap"):
     plt.colorbar()
     plt.title(title)
     plt.savefig(f'results/{title.replace(" ", "_")}.pdf')
-    # plt.show()
+    plt.show()
     plt.close()  # Close the figure
 
 

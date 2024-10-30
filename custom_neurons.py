@@ -11,7 +11,7 @@ from utils import convert_layer_size_to_grid_size
 
 
 class CustomLeaky(snn.Leaky):
-    def __init__(self, beta, input_size, threshold=1.0):
+    def __init__(self, beta, input_size, threshold=1.2):
         super().__init__(beta=beta, threshold=threshold)
         self.num_neurons = input_size
         self.grid_dims = convert_layer_size_to_grid_size(input_size)

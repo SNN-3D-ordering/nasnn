@@ -37,9 +37,9 @@ def calculate_distance_between_layers(data, layer_idx):
 
     weight_matrix = data["weight_matrices"][layer_idx]
 
-    #visualize_layer_with_heatmap(
-    #    current_layer, current_layer_heatmap, title=f"Layer {layer_idx}"
-    #)
+    visualize_layer_with_heatmap(
+       current_layer, current_layer_heatmap, title=f"Layer {layer_idx}"
+    )
     current_shape = layer_shapes[layer_idx]
     next_shape = layer_shapes[layer_idx + 1]
 

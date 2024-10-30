@@ -116,7 +116,7 @@ def cluster_simple(net, test_loader, device, config, pruned=False, max_steps=Non
         )
         if pruned:
             export_filepath = config["filepaths"][
-                "simple_clustered_pruned_network_representation_filepath"
+                "pruned_simple_clustered_network_representation_filepath"
             ]
         else:
             export_filepath = config["filepaths"][

@@ -158,7 +158,7 @@ def simulated_annealing(rank_map1, rank_map2, layer2, kernel_size=3, num_swaps=3
     # initialize the temperature
     temperature = 5.0
     temperature_min = 0.00001
-    alpha = 0.9998
+    alpha = 0.9
 
     # initialize the current state
     current_state = rank_map2
@@ -268,10 +268,10 @@ def cluster_advanced(config, pruned=False):
 
     if pruned:
         filepath_unclustered = config["filepaths"][
-            "simple_clustered_pruned_network_representation_filepath"
+            "pruned_simple_clustered_network_representation_filepath"
         ]
         filepath_clustered = config["filepaths"][
-            "advanced_clustered_pruned_network_representation_filepath"
+            "pruned_advanced_clustered_network_representation_filepath"
         ]
     else:
         filepath_unclustered = config["filepaths"]["network_representation_filepath"]
