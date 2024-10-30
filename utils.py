@@ -503,8 +503,7 @@ def visualize_tensor(tensor, filename="visualize_tensor.pdf"):
 
     # Add labels and title
     plt.xlabel("Neuron Index")
-    plt.ylabel("Value")
-    plt.title("Tensor Values")
+    plt.ylabel("Activity")
 
     # Save the plot
     plt.savefig(f"results/{filename}")
