@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import os
 import uuid
 
-os.makedirs("plots", exist_ok=True)
+os.makedirs("results", exist_ok=True)
 
 
 def print_batch_accuracy(data, targets, net, batch_size, train=False):
@@ -362,7 +362,7 @@ def visualize_neuron_positions(net):
     coordinates = net.lif1.coordinates.detach().numpy()
     plt.scatter(coordinates[:, 0], coordinates[:, 1])
     # generate unique filename
-    plt.savefig(f"plots/visualize_neuron_positions_{uuid.uuid4()}.pdf")
+    plt.savefig(f"results/visualize_neuron_positions_{uuid.uuid4()}.pdf")
     # plt.show()
     plt.close()
 
