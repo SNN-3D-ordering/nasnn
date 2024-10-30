@@ -1,6 +1,10 @@
+from re import A
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+import os
+
+os.makedirs("plots", exist_ok=True)
 
 
 def print_batch_accuracy(data, targets, net, batch_size, train=False):
@@ -356,7 +360,8 @@ def visualize_neuron_positions(net):
     """Visualize the 2D coordinates of the neurons in the network."""
     coordinates = net.lif1.coordinates.detach().numpy()
     plt.scatter(coordinates[:, 0], coordinates[:, 1])
-    plt.show()
+    plt.savefig("plots/visualize_neuron_positions.pdf")
+    # plt.show()
 
 
 def visualize_neuron_positions_color(layer, spk_sum=None, title="Neuron Coordinates"):
@@ -369,18 +374,21 @@ def visualize_neuron_positions_color(layer, spk_sum=None, title="Neuron Coordina
     else:
         colors = "b"  # Default color if spk_sum is not provided
 
-    plt.scatter(x_coords, y_coords, c=colors, cmap="viridis", s=100, edgecolor="k")
+    plt.scatter(
+        x_coords, y_coords, c=colors, cmap="viridis", s=100, edgecolor="k", alpha=0.5
+    )
     plt.colorbar(label="Spike Sum")
     plt.title(title)
     plt.xlabel("X Coordinate")
     plt.ylabel("Y Coordinate")
-    plt.show()
+    plt.savefig(f'plots/{title.replace(" ", "_")}.pdf')
+    # plt.show()
 
 
-def visualize_heatmaps(heatmaps):
+def visualize_heatmaps_as_barcharts(heatmaps):
     """Visualize the values of the heatmaps as bar charts."""
-    for heatmap in heatmaps:
-        visualize_tensor(heatmap)
+    for i, heatmap in enumerate(heatmaps):
+        visualize_tensor(heatmap, filename=f"heatmap_{i}.pdf")
 
 
 def visualize_heatmap(heatmap, title="Heatmap"):
@@ -396,7 +404,8 @@ def visualize_heatmap(heatmap, title="Heatmap"):
     plt.imshow(heatmap, cmap="hot")
     plt.colorbar()
     plt.title(title)
-    plt.show()
+    plt.savefig(f'plots/{title.replace(" ", "_")}.pdf')
+    # plt.show()
 
 
 def visualize_layer_with_heatmap(layer, heatmap, title="Layer with Heatmap"):
@@ -418,10 +427,11 @@ def visualize_layer_with_heatmap(layer, heatmap, title="Layer with Heatmap"):
     plt.imshow(aligned_heatmap, cmap="hot")
     plt.colorbar()
     plt.title(title)
-    plt.show()
+    plt.savefig(f'plots/{title.replace(" ", "_")}.pdf')
+    # plt.show()
 
 
-def visualize_tensor(tensor):
+def visualize_tensor(tensor, filename="visualize_tensor.pdf"):
     """Visualize the values of a tensor as a bar chart."""
     # Convert tensor to numpy array
     values = tensor.detach().numpy()
@@ -430,15 +440,17 @@ def visualize_tensor(tensor):
     values = np.sort(values)
 
     # Create a bar chart
+    plt.figure()
     plt.bar(range(len(values)), values)
 
     # Add labels and title
-    plt.xlabel("Index")
+    plt.xlabel("Neuron Index")
     plt.ylabel("Value")
     plt.title("Tensor Values")
 
-    # Show the plot
-    plt.show()
+    # Save the plot
+    plt.savefig(f"plots/{filename}")
+    plt.close()  # Close the plot to avoid overlapping
 
 
 def convert_number_to_human_readable(number):

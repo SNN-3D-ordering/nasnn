@@ -2,7 +2,7 @@
 # TODO: Array übertragen in json
 # TODO: weight matrices ==layer_connections in NetworkRepresentation
 import torch
-from utils import visualize_neuron_positions_color, visualize_heatmaps
+from utils import visualize_neuron_positions_color, visualize_heatmaps_as_barcharts
 from network_representation import NetworkRepresentation
 import numpy as np
 
@@ -35,7 +35,7 @@ def test(net, test_loader, device, config, pruned=False, max_steps=None):
     network_representation = NetworkRepresentation(layers, weight_matrices, heatmaps)
 
     visualize_neuron_positions_color(net.lif1)
-    # visualize_heatmaps(heatmaps)
+    visualize_heatmaps_as_barcharts(heatmaps)
 
     if pruned:
         export_filepath = config["filepaths"]["pruned_network_representation_filepath"]
